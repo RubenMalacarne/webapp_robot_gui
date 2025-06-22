@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Configuration</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: transparent;
+      font-family: 'Consolas', monospace;
+      color: #ccc;
+    }
+
+    .archive-section {
+      background: rgba(40, 40, 60, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 0 10px rgba(100, 100, 150, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    .archive-title {
+      font-size: 18px;
+      color: #00ff88;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 5px;
+    }
+
+    .archive-content {
+      font-size: 14px;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .archive-content pre {
+      background: rgba(20, 20, 30, 0.7);
+      padding: 10px;
+      border-left: 3px solid #00ff88;
+      color: #88ffaa;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="archive-section">
+    <div class="archive-title">ODrive Setup Instructions</div>
+    <div class="archive-content">
+      To get started, run this command in your terminal:
+      <pre>sudo bash -c "curl https://cdn.odriverobotics.com/files/odrive-udev-rules.rules > /etc/udev/rules.d/91-odrive.rules && udevadm control --reload-rules && udevadm trigger"</pre>
+    </div>
+  </div>
+
+  <div class="archive-section">
+    <div class="archive-title">Supported Devices</div>
+    <div class="archive-content">
+      - ODrive Pro<br>
+      - ODrive S1<br>
+      - ODrive Micro
+    </div>
+  </div>
+
+  <div class="archive-section">
+    <div class="archive-title">USB Isolation</div>
+    <div class="archive-content">
+      Use a USB isolator to prevent <em>ground loops</em>. These can damage electronics.
+    </div>
+  </div>
+
+  <div class="archive-section">
+    <div class="archive-title">Connection Troubleshooting</div>
+    <div class="archive-content">
+      - Make sure no other tab is using the ODrive<br>
+      - GUI is not compatible with versions &gt; 3.6<br>
+      - Check cable or USB power
+    </div>
+  </div>
+
+</body>
+</html>
