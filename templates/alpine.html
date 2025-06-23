@@ -331,20 +331,24 @@
     </div>
     
     <script>
-        const crosshair = document.getElementById('crosshair');
-        const coordinates = document.getElementById('coordinates');
-        const joystickInfo = document.getElementById('joystick-info');
+        const crosshair       = document.getElementById('crosshair');
+        const coordinates     = document.getElementById('coordinates');
+        const joystickInfo    = document.getElementById('joystick-info');
         const statusIndicator = document.getElementById('status');
-        const container = document.getElementById('container');
-        const lineLeft = document.getElementById('lineLeft');
-        const lineRight = document.getElementById('lineRight');
-        const crosshairLineLeft = document.getElementById('crosshairLineLeft');
+        const container       = document.getElementById('container');
+        const lineLeft        = document.getElementById('lineLeft');
+        const lineRight       = document.getElementById('lineRight');
+        const crosshairLineLeft  = document.getElementById('crosshairLineLeft');
         const crosshairLineRight = document.getElementById('crosshairLineRight');
-        const distanceVector = document.getElementById('distanceVector');
-        const distanceLabel = document.getElementById('distanceLabel');
+        const distanceVector  = document.getElementById('distanceVector');
+        const distanceLabel   = document.getElementById('distanceLabel');
         
+        /* ---------- CONFIG ---------- */
+        const STORE_NAME = 'crosshair';               // <— NOTA: cambai qua se vuoi altri state “joy”, “camera” …
+        const STATE_URL  = `/state/${STORE_NAME}`;
+        const UPDATE_URL = `/update/${STORE_NAME}`;
         let lastUpdate = Date.now();
-        let currentState = { x: 0, y: 0 };
+        let currentState = { x: 0, y: 0, robot_x: 0, robot_y: 0 };
 
         function updateGeometry(crosshairX, crosshairY, robotX, robotY) {
             const containerRect = container.getBoundingClientRect();
@@ -410,8 +414,6 @@
             }
         }
 
-
-
         // Keep track of robot-relative positions clearly
         async function pollState() {
             while (true) {
@@ -442,30 +444,29 @@
         function updateDashedLine(line, startX, startY, endX, endY) {
             const dx = endX - startX;
             const dy = endY - startY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distance = Math.hypot(dx, dy);
             const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            
-            line.style.left = startX + 'px';
-            line.style.top = startY + 'px';
-            line.style.width = distance + 'px';
+
+            line.style.left   = startX + 'px';
+            line.style.top    = startY + 'px';
+            line.style.width  = distance + 'px';
             line.style.transform = `rotate(${angle}deg)`;
         }
         
+        
+        /* ---------- POLLING ---------- */
         async function pollState() {
             while (true) {
                 try {
-                    const res = await fetch('/state');
+                    const res  = await fetch(STATE_URL);   // <— usa l’endpoint parametrico
                     const data = await res.json();
-                    
+
                     currentState = data;
 
-                    crosshair.style.transform = 
-                        `translate(calc(-50% + ${data.x}px), calc(-50% + ${data.y}px))`;
-
-                    coordinates.textContent = 
+                    coordinates.textContent =
                         `X: ${Math.round(data.x)}, Y: ${Math.round(data.y)}`;
 
-                    joystickInfo.innerHTML = 
+                    joystickInfo.innerHTML =
                         `Axis 0: ${data.axis0.toFixed(3)}<br>Axis 1: ${data.axis1.toFixed(3)}`;
 
                     updateGeometry(data.x, data.y, data.robot_x, data.robot_y);
@@ -473,27 +474,28 @@
                     const now = Date.now();
                     statusIndicator.classList.toggle('connected', now - lastUpdate < 1000);
                     lastUpdate = now;
-
                 } catch (e) {
                     console.error('Errore connessione:', e);
                     statusIndicator.classList.remove('connected');
                 }
 
-                await new Promise(r => setTimeout(r, 50));
+                await new Promise(r => setTimeout(r, 50)); // 20 fps circa
             }
         }
+
         
-        // Inizializza geometria al caricamento
+        
+        /* ---------- INIT & RESIZE ---------- */
         window.addEventListener('load', () => {
-            setTimeout(() => updateGeometry(0, 0), 100);
+            // Prima di ricevere dati reali, si parte con (0,0)
+            updateGeometry(0, 0, 0, 0);
+            pollState();                   // avvia il loop una sola volta
         });
-        
-        // Aggiorna geometria se la finestra viene ridimensionata
+
         window.addEventListener('resize', () => {
-            setTimeout(() => updateGeometry(currentState.x, currentState.y), 100);
+            // Ricostruisce le linee se la finestra cambia
+            updateGeometry(currentState.x, currentState.y, currentState.robot_x, currentState.robot_y);
         });
-        
-        pollState();
     </script>
 </body>
 </html>

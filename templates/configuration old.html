@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Joystick Configuration</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: transparent;
+      font-family: 'Consolas', monospace;
+      color: #ccc;
+      display: flex;
+      justify-content: center;
+    }
+
+    .archive-section {
+      background: rgba(40, 40, 60, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 25px;
+      width: 460px;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+      backdrop-filter: blur(5px);
+      text-align: center;
+    }
+
+    .archive-title {
+      font-size: 18px;
+      color: #00ff88;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 5px;
+    }
+    .grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                linear-gradient(rgba(100, 100, 150, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 100, 150, 0.3) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+    .joystick-container {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+    }
+
+    .joystick-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .joystick {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      background: rgba(20, 20, 30, 0.8);
+      border: 2px solid #555;
+      border-radius: 10px;
+    }
+
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background: #ccc;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .label-vertical {
+      position: absolute;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 14px;
+      font-weight: bold;
+      transform: translateY(-50%);
+      top: 50%;
+    }
+
+    .label-horizontal {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .throttle {
+      left: -35px;
+      color: red;
+    }
+
+    .pitch {
+      left: 100%;
+      margin-left: 10px;
+      color: yellow;
+    }
+
+    .yaw {
+      color: limegreen;
+    }
+
+    .roll {
+      color: deepskyblue;
+    }
+    .variable-group {
+      margin-bottom: 15px;
+    }
+
+    .variable-label {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #00ff88;
+    }
+    .section-row {
+      display: flex;
+      gap: 30px; /* spazio orizzontale tra le sezioni */
+      justify-content: center;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="section-row">
+  <div class="archive-section">
+    <div class="archive-title">Joystick Mode 2 Layout</div>
+    <div class="joystick-container">
+      <!-- Left Joystick -->
+      <div class="joystick-wrapper">
+        
+        <div class="joystick" id="joystick-left">
+          <div class="grid"></div>
+          <div class="crosshair" id="crosshair-left"></div>
+          <div class="label-vertical throttle">Throttle</div>
+        </div>
+        <div class="label-horizontal yaw">Yaw</div>
+      </div>
+
+      <!-- Right Joystick -->
+      <div class="joystick-wrapper">
+        <div class="joystick" id="joystick-right">
+          <div class="grid"></div>
+          <div class="crosshair" id="crosshair-right"></div>
+          <div class="label-vertical pitch">Pitch</div>
+        </div>
+        <div class="label-horizontal roll">Roll</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variable Settings Section -->
+  <div class="archive-section">
+    <div class="archive-title">Variable Setting</div>
+
+    <div class="variable-group">
+      <div class="variable-label">Ruby</div>
+      <input type="range" min="0" max="100" value="50">
+    </div>
+
+    <div class="variable-group">
+      <div class="variable-label">Luca</div>
+      <input type="range" min="0" max="100" value="50">
+    </div>
+
+    <div class="variable-group">
+      <div class="variable-label">Focchi</div>
+      <input type="range" min="0" max="100" value="10">
+    </div>
+
+  </div>
+  </div>
+  <script>
+    /* ---------------- MAPPING CONFIG ---------------- */ /* ---------- SEZIONE CONFIG ---------- */
+    const STORE_NAME = 'joy';                 // <-- da quale store leggere
+    const STATE_URL  = `/state/${STORE_NAME}`;
+
+    const joystickSize = 150;                 // px (width/height del quadrato joystick)
+    const half         = joystickSize / 2;    // 75
+    let   maxRange     = 500;                 // verrà sovrascritto da /state
+
+    const crosshairLeft  = document.getElementById('crosshair-left');
+    const crosshairRight = document.getElementById('crosshair-right');
+    /* -------------- FUNZIONI UTILI ------------------ */
+    function mapToPixel(value, range) {
+      // converte [-range, +range] in [0, joystickSize]
+      return half + (value / range) * half;
+    }
+
+    function updateFromState(data) {
+        if (data.max_range !== undefined) maxRange = data.max_range;
+
+        // Accesso sicuro agli assi
+        const axes = Array.isArray(data.axes) ? data.axes : [];
+
+        const ax0 = axes[0] ?? 0;
+        const ax1 = axes[1] ?? 0;
+        const ax2 = axes[2] ?? 0;
+        const ax3 = axes[3] ?? 0;
+
+        const xLeft  = mapToPixel(ax0 * maxRange, maxRange);
+        const yLeft  = mapToPixel(ax1 * maxRange, maxRange);
+        const xRight = mapToPixel(ax2 * maxRange, maxRange);
+        const yRight = mapToPixel(ax3 * maxRange, maxRange);
+
+        crosshairLeft.style.left  = `${xLeft}px`;
+        crosshairLeft.style.top   = `${yLeft}px`;
+        crosshairRight.style.left = `${xRight}px`;
+        crosshairRight.style.top  = `${yRight}px`;
+    }
+
+
+    /* -------------- POLLING /state ------------------ */
+      
+    async function poll() {
+      try {
+        const res  = await fetch(STATE_URL);   // <-- usa l’endpoint parametrico
+        const json = await res.json();
+        updateFromState(json);
+      } catch (err) {
+        console.error(`Errore fetch ${STATE_URL}:`, err);
+      }
+    }
+
+    setInterval(poll, 50); // ~20 Hz
+  </script>
+
+
+</body>
+</html>

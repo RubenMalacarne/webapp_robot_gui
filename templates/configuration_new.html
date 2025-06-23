@@ -348,14 +348,14 @@
     <div class="radio-layout">
       <!-- Lato Sinistro -->
       <div class="left-side">
-        <!-- Switch Axis 6 -->
+        <!-- Switch Axis 4 -->
         <div class="control-group">
-          <div class="control-title">Switch Axis 6</div>
+          <div class="control-title">Switch Axis 4</div>
           <div class="switch-container">
-            <div class="switch-indicator" id="switch-6">
-              <div class="switch-position" id="switch-6-pos-2"></div>
-              <div class="switch-position" id="switch-6-pos-1"></div>
-              <div class="switch-position" id="switch-6-pos-0"></div>
+            <div class="switch-indicator" id="switch-4">
+              <div class="switch-position" id="switch-4-pos-2"></div>
+              <div class="switch-position" id="switch-4-pos-1"></div>
+              <div class="switch-position" id="switch-4-pos-0"></div>
             </div>
             <div class="switch-label">3-State</div>
           </div>
@@ -395,12 +395,12 @@
           </div>
         </div>
 
-        <!-- Status Bar Axis 4 -->
+        <!-- Status Bar Axis 6 -->
         <div class="control-group status-bar-container">
-          <div class="control-title">Status Bar Axis 4</div>
-          <div class="axis-label">Value: <span id="axis-4-value">0</span></div>
+          <div class="control-title">Status Bar Axis 6</div>
+          <div class="axis-label">Value: <span id="axis-6-value">0</span></div>
           <div class="status-bar">
-            <div class="status-fill" id="status-fill-4"></div>
+            <div class="status-fill" id="status-fill-6"></div>
           </div>
         </div>
       </div>
@@ -419,6 +419,7 @@
     const crosshairLeft  = document.getElementById('crosshair-left');
     const crosshairRight = document.getElementById('crosshair-right');
     
+    // Riferimenti ai nuovi elementi
     const buttonIndicators = [
       document.getElementById('btn-0'),
       document.getElementById('btn-1'),
@@ -426,10 +427,10 @@
       document.getElementById('btn-3')
     ];
 
-    const switch6Positions = [
-      document.getElementById('switch-6-pos-0'),
-      document.getElementById('switch-6-pos-1'),
-      document.getElementById('switch-6-pos-2')
+    const switch4Positions = [
+      document.getElementById('switch-4-pos-0'),
+      document.getElementById('switch-4-pos-1'),
+      document.getElementById('switch-4-pos-2')
     ];
 
     const switch5Positions = [
@@ -438,20 +439,25 @@
       document.getElementById('switch-5-pos-2')
     ];
 
-    const statusFill4 = document.getElementById('status-fill-4');
-    const axis4Value = document.getElementById('axis-4-value');
+    const statusFill6 = document.getElementById('status-fill-6');
+    const axis6Value = document.getElementById('axis-6-value');
 
     /* -------------- FUNZIONI UTILI ------------------ */
     function mapToPixel(value, range) {
+      // converte [-range, +range] in [0, joystickSize]
       return half + (value / range) * half;
     }
+
     function mapToPercentage(value) {
+      // converte [-1, +1] in [0, 100]
       return Math.round(((value + 1) / 2) * 100);
     }
+
     function getSwitch3StatePosition(value) {
-      if (value < -0.3) return 0;      
-      else if (value > 0.3) return 2;  
-      else return 1;                   
+      // Converte valore axis in posizione switch 3 stati
+      if (value < -0.3) return 0;      // Posizione bassa
+      else if (value > 0.3) return 2;  // Posizione alta
+      else return 1;                   // Posizione centrale
     }
 
     function updateSwitchIndicator(positions, activePos) {
@@ -459,58 +465,64 @@
         pos.classList.toggle('active', index === activePos);
       });
     }
+
     function updateFromState(data) {
         if (data.max_range !== undefined) maxRange = data.max_range;
 
+        // Accesso sicuro agli assi
         const axes = Array.isArray(data.axes) ? data.axes : [];
         const buttons = Array.isArray(data.buttons) ? data.buttons : [];
 
-        const axis0 = axes[0] ?? 0;
-        const axis1 = axes[1] ?? 0;
-        const axis2 = axes[2] ?? 0;
-        const axis3 = axes[3] ?? 0;
+        // Joystick originali (assi 0-3)
+        const ax0 = axes[0] ?? 0;
+        const ax1 = axes[1] ?? 0;
+        const ax2 = axes[2] ?? 0;
+        const ax3 = axes[3] ?? 0;
 
-        const axis4 = axes[4] ?? 0;
-        const axis5 = axes[5] ?? 0;
-        const axis6 = axes[6] ?? 0;
-        
-        const xLeft  = mapToPixel(axis0 * maxRange, maxRange);
-        const yLeft  = mapToPixel(axis1 * maxRange, maxRange);
-        const xRight = mapToPixel(axis2 * maxRange, maxRange);
-        const yRight = mapToPixel(axis3 * maxRange, maxRange);
+        const xLeft  = mapToPixel(ax0 * maxRange, maxRange);
+        const yLeft  = mapToPixel(ax1 * maxRange, maxRange);
+        const xRight = mapToPixel(ax2 * maxRange, maxRange);
+        const yRight = mapToPixel(ax3 * maxRange, maxRange);
 
         crosshairLeft.style.left  = `${xLeft}px`;
         crosshairLeft.style.top   = `${yLeft}px`;
         crosshairRight.style.left = `${xRight}px`;
         crosshairRight.style.top  = `${yRight}px`;
 
+        // Aggiorna bottoni (primi 4)
         buttonIndicators.forEach((btn, index) => {
           if (btn) {
             btn.classList.toggle('active', buttons[index] === 1);
           }
         });
 
-        const switch6Pos = getSwitch3StatePosition(axis6);
+        // Aggiorna switch assi 4 e 5 (3 stati)
+        const axis4 = axes[4] ?? 0;
+        const axis5 = axes[5] ?? 0;
+        
+        const switch4Pos = getSwitch3StatePosition(axis4);
         const switch5Pos = getSwitch3StatePosition(axis5);
         
-        updateSwitchIndicator(switch6Positions, switch6Pos);
+        updateSwitchIndicator(switch4Positions, switch4Pos);
         updateSwitchIndicator(switch5Positions, switch5Pos);
-        const percentage = mapToPercentage(axis4);
+
+        // Aggiorna barra di stato asse 6
+        const axis6 = axes[6] ?? 0;
+        const percentage = mapToPercentage(axis6);
         
-        if (statusFill4) {
-          statusFill4.style.width = `${percentage}%`;
+        if (statusFill6) {
+          statusFill6.style.width = `${percentage}%`;
         }
-        if (axis4Value) {
-          axis4Value.textContent = axis4.toFixed(2);
+        if (axis6Value) {
+          axis6Value.textContent = axis6.toFixed(2);
         }
     }
-
 
     /* -------------- POLLING /state ------------------ */
       
     async function poll() {
       try {
-        const res  = await fetch(STATE_URL);   // <-- usa l’endpoint parametrico
+        const res  = await fetch(STATE_URL);   // <-- usa l'endpoint parametrico
         const json = await res.json();
         updateFromState(json);
       } catch (err) {
@@ -518,10 +530,8 @@
       }
     }
 
-    setInterval(poll, 10); // ~50 Hz
-    
+    setInterval(poll, 50); // ~20 Hz
   </script>
-
 
 </body>
 </html>
