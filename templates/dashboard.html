@@ -2,10 +2,478 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
+  <title>Voltage & Current Monitor</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: transparent;
+      font-family: 'Consolas', monospace;
+      color: #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      background-image: 
+        linear-gradient(rgba(100, 100, 150, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(100, 100, 150, 0.3) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -1;
+    }
+
+    .monitor-section {
+      background: rgba(40, 40, 60, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 30px;
+      margin-bottom: 30px;
+      width: 1000px;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    .section-title {
+      font-size: 20px;
+      color: rgba(255, 204, 0, 0.99);
+      margin-bottom: 20px;
+      border-bottom: 2px dashed rgba(255, 204, 0, 0.99);
+      padding-bottom: 8px;
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .value-display {
+      font-size: 16px;
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      width: 96%;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .status-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff3333;
+      transition: all 0.3s ease;
+    }
+
+    .status-indicator.connected {
+      background: #00ff88;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .stat-item {
+      background: rgba(30, 30, 45, 0.7);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .voltage-theme .stat-value {
+      color: #ff6b6b;
+    }
+
+    .current-theme .stat-value {
+      color: #4ecdc4;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .control-button {
+      background: rgba(30, 30, 45, 0.8);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: #ccc;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .control-button:hover {
+      background: rgba(50, 50, 70, 0.8);
+      border-color: #00ff88;
+    }
+
+    .control-button.active {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+  </style>
 </head>
 <body>
-  <h2>Dashboard</h2>
-  <p>This is the dashboard page content.</p>
+  <div class="grid"></div>
+
+  <!-- Voltage Section -->
+  <div class="monitor-section voltage-theme">
+    <div class="section-title">
+      <span>Voltage Monitor</span>
+      <div class="value-display" id="voltage-current">0.00 V</div>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="voltageChart"></canvas>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">Current</div>
+        <div class="stat-value" id="voltage-instantaneous">0.00 V</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Average</div>
+        <div class="stat-value" id="voltage-average">0.00 V</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Peak</div>
+        <div class="stat-value" id="voltage-peak">0.00 V</div>
+      </div>
+    </div>
+
+    <div class="status-info">
+      <div class="connection-status">
+        <div class="status-indicator" id="voltage-status"></div>
+        <span>Voltage Sensor</span>
+      </div>
+      <span>Samples: <span id="voltage-samples">0</span></span>
+    </div>
+  </div>
+
+  <!-- Current Section -->
+  <div class="monitor-section current-theme">
+    <div class="section-title">
+      <span>Current Monitor</span>
+      <div class="value-display" id="current-current">0.00 A</div>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="currentChart"></canvas>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">Current</div>
+        <div class="stat-value" id="current-instantaneous">0.00 A</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Average</div>
+        <div class="stat-value" id="current-average">0.00 A</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Peak</div>
+        <div class="stat-value" id="current-peak">0.00 A</div>
+      </div>
+    </div>
+
+    <div class="status-info">
+      <div class="connection-status">
+        <div class="status-indicator" id="current-status"></div>
+        <span>Current Sensor</span>
+      </div>
+      <span>Samples: <span id="current-samples">0</span></span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-row">
+    <button class="control-button" id="pause-btn">Pause</button>
+    <button class="control-button" id="reset-btn">Reset</button>
+    <button class="control-button" id="export-btn">Export Data</button>
+  </div>
+
+  <script>
+    // Socket.IO connection
+    const socket = io();
+    
+    // Data storage
+    const maxDataPoints = 100;
+    let voltageData = [];
+    let currentData = [];
+    let timeLabels = [];
+    let isPaused = false;
+    
+    // Statistics tracking
+    let voltageStats = { sum: 0, count: 0, peak: 0 };
+    let currentStats = { sum: 0, count: 0, peak: 0 };
+
+    // Chart configuration
+    const chartConfig = {
+      type: 'line',
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#888',
+              callback: function(value) {
+                return value.toFixed(1) + 's';
+              }
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#888'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        elements: {
+          point: {
+            radius: 0
+          },
+          line: {
+            tension: 0.1
+          }
+        }
+      }
+    };
+
+    // Initialize voltage chart
+    const voltageChart = new Chart(document.getElementById('voltageChart'), {
+      ...chartConfig,
+      data: {
+        datasets: [{
+          label: 'Voltage',
+          data: [],
+          borderColor: '#ff6b6b',
+          backgroundColor: 'rgba(255, 107, 107, 0.1)',
+          borderWidth: 2,
+          fill: true
+        }]
+      }
+    });
+
+    // Initialize current chart
+    const currentChart = new Chart(document.getElementById('currentChart'), {
+      ...chartConfig,
+      data: {
+        datasets: [{
+          label: 'Current',
+          data: [],
+          borderColor: '#4ecdc4',
+          backgroundColor: 'rgba(78, 205, 196, 0.1)',
+          borderWidth: 2,
+          fill: true
+        }]
+      }
+    });
+
+    // DOM elements
+    const elements = {
+      voltage: {
+        current: document.getElementById('voltage-current'),
+        instantaneous: document.getElementById('voltage-instantaneous'),
+        average: document.getElementById('voltage-average'),
+        peak: document.getElementById('voltage-peak'),
+        samples: document.getElementById('voltage-samples'),
+        status: document.getElementById('voltage-status')
+      },
+      current: {
+        current: document.getElementById('current-current'),
+        instantaneous: document.getElementById('current-instantaneous'),
+        average: document.getElementById('current-average'),
+        peak: document.getElementById('current-peak'),
+        samples: document.getElementById('current-samples'),
+        status: document.getElementById('current-status')
+      }
+    };
+
+    // Update statistics
+    function updateStats(value, stats, type) {
+      stats.sum += value;
+      stats.count++;
+      stats.peak = Math.max(stats.peak, Math.abs(value));
+      
+      const average = stats.sum / stats.count;
+      const suffix = type === 'voltage' ? ' V' : ' A';
+      
+      elements[type].instantaneous.textContent = value.toFixed(2) + suffix;
+      elements[type].average.textContent = average.toFixed(2) + suffix;
+      elements[type].peak.textContent = stats.peak.toFixed(2) + suffix;
+      elements[type].samples.textContent = stats.count.toString();
+      elements[type].current.textContent = value.toFixed(2) + suffix;
+    }
+
+    // Add data point
+    function addDataPoint(timestamp, voltage, current) {
+      if (isPaused) return;
+
+      const timeInSeconds = timestamp / 1000;
+      
+      // Add new data
+      voltageData.push({ x: timeInSeconds, y: voltage });
+      currentData.push({ x: timeInSeconds, y: current });
+      
+      // Remove old data if exceeding max points
+      if (voltageData.length > maxDataPoints) {
+        voltageData.shift();
+        currentData.shift();
+      }
+      
+      // Update charts
+      voltageChart.data.datasets[0].data = voltageData;
+      currentChart.data.datasets[0].data = currentData;
+      
+      voltageChart.update('none');
+      currentChart.update('none');
+      
+      // Update statistics
+      updateStats(voltage, voltageStats, 'voltage');
+      updateStats(current, currentStats, 'current');
+    }
+
+    // Socket event handlers
+    socket.on('connect', function() {
+      console.log('Connected to server');
+      elements.voltage.status.classList.add('connected');
+      elements.current.status.classList.add('connected');
+    });
+
+    socket.on('disconnect', function() {
+      console.log('Disconnected from server');
+      elements.voltage.status.classList.remove('connected');
+      elements.current.status.classList.remove('connected');
+    });
+
+    // Listen for sensor data
+    socket.on('sensor_data', function(data) {
+      const timestamp = data.timestamp || Date.now();
+      const voltage = data.voltage || 0;
+      const current = data.current || 0;
+      
+      addDataPoint(timestamp, voltage, current);
+    });
+
+    // Control buttons
+    document.getElementById('pause-btn').addEventListener('click', function() {
+      isPaused = !isPaused;
+      this.textContent = isPaused ? 'Resume' : 'Pause';
+      this.classList.toggle('active', isPaused);
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', function() {
+      voltageData = [];
+      currentData = [];
+      voltageStats = { sum: 0, count: 0, peak: 0 };
+      currentStats = { sum: 0, count: 0, peak: 0 };
+      
+      voltageChart.data.datasets[0].data = [];
+      currentChart.data.datasets[0].data = [];
+      voltageChart.update();
+      currentChart.update();
+      
+      // Reset displays
+      ['voltage', 'current'].forEach(type => {
+        const suffix = type === 'voltage' ? ' V' : ' A';
+        elements[type].current.textContent = '0.00' + suffix;
+        elements[type].instantaneous.textContent = '0.00' + suffix;
+        elements[type].average.textContent = '0.00' + suffix;
+        elements[type].peak.textContent = '0.00' + suffix;
+        elements[type].samples.textContent = '0';
+      });
+    });
+
+    document.getElementById('export-btn').addEventListener('click', function() {
+      const data = {
+        timestamp: new Date().toISOString(),
+        voltage_data: voltageData,
+        current_data: currentData,
+        voltage_stats: voltageStats,
+        current_stats: currentStats
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sensor_data_${new Date().toISOString().slice(0, 19)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Simulate data for testing (remove when using real Flask/Socket.IO)
+    let testTime = 0;
+    setInterval(() => {
+      if (!socket.connected) {
+        const voltage = 12 + Math.sin(testTime * 0.1) * 2 + (Math.random() - 0.5) * 0.5;
+        const current = 2 + Math.cos(testTime * 0.15) * 0.8 + (Math.random() - 0.5) * 0.2;
+        addDataPoint(Date.now(), voltage, current);
+        testTime++;
+      }
+    }, 100);
+  </script>
 </body>
 </html>
