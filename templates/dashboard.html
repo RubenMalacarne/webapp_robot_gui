@@ -44,7 +44,7 @@
       font-size: 20px;
       color: rgba(255, 204, 0, 0.99);
       margin-bottom: 20px;
-      border-bottom: 2px dashed rgba(255, 204, 0, 0.99);
+      border-bottom: 2px dashed  #ffcc00;
       padding-bottom: 8px;
       text-align: center;
       display: flex;
@@ -158,10 +158,49 @@
       border-color: #00ff88;
       color: #00ff88;
     }
+
+    .description-section {
+      background: rgba(50, 50, 70, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      width: 1000px;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+      backdrop-filter: blur(5px);
+      text-align: center;
+    }
+
+    .description-title {
+      font-size: 18px;
+      color:  #ffcc00;
+      margin-bottom: 10px;
+    }
+
+    .description-divider {
+      border: none;
+      border-bottom: 2px dashed  #ffcc00;
+      margin: 10px 0;
+    }
+
+    .description-text {
+      font-size: 16px;
+      color: #ccc;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
   <div class="grid"></div>
+
+  <!-- Description Section -->
+  <div class="description-section">
+    <h2 class="description-title">Dashboard Overview</h2>
+    <hr class="description-divider">
+    <p class="description-text">
+      This dashboard provides real-time monitoring of voltage and current values. The graphs below display the instantaneous, average, and peak values for both voltage and current sensors. Use the controls to pause, reset, or export the data.
+    </p>
+  </div>
 
   <!-- Voltage Section -->
   <div class="monitor-section voltage-theme">
