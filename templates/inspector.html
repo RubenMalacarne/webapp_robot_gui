@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Joystick Inspector</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: transparent;
+      font-family: 'Consolas', monospace;
+      color: #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      background-image: 
+          linear-gradient(rgba(100, 100, 150, 0.3) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100, 100, 150, 0.3) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -1;
+    }
+
+    .inspector-container {
+      display: flex;
+      gap: 30px;
+      width: 100%;
+      max-width: 1400px;
+      align-items: flex-start;
+    }
+
+    .data-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 800px;
+    }
+
+    .data-row {
+      display: flex;
+      gap: 20px;
+    }
+
+    .data-section {
+      background: rgba(40, 40, 60, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 20px;
+      flex: 1;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    .data-title {
+      font-size: 18px;
+      color: #00ff88;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 5px;
+    }
+
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .data-item:last-child {
+      border-bottom: none;
+    }
+
+    .data-label {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .data-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #00ff88;
+      font-family: 'Courier New', monospace;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-left: 10px;
+    }
+
+    .status-connected {
+      background: #00ff88;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    .status-disconnected {
+      background: #ff4444;
+      box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+    }
+
+    .status-warning {
+      background: #ffaa00;
+      box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+    }
+
+    .charts-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .chart-container {
+      background: rgba(40, 40, 60, 0.85);
+      border: 1px solid #4a4a6a;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+      backdrop-filter: blur(5px);
+      height: 300px;
+    }
+
+    .chart-title {
+      font-size: 16px;
+      color: #00ff88;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 8px;
+    }
+
+    .chart-canvas {
+      width: 100%;
+      height: calc(100% - 50px);
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid #555;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.3;
+      background-image: 
+          linear-gradient(rgba(100, 100, 150, 0.2) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100, 100, 150, 0.2) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .chart-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, #ff0066, #ff6600, #ffcc00, #66ff00, #00ff88);
+      border-radius: 1px;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+    }
+
+    .chart-data {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #aaa;
+      z-index: 10;
+    }
+
+    .chart-axes {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 12px;
+      color: #aaa;
+      z-index: 10;
+    }
+
+    .pulse-dot {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .data-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: rgba(30, 30, 45, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .group-title {
+      font-size: 14px;
+      color: #ffaa00;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  
+  <div class="inspector-container">
+    <!-- Sezioni Data sulla sinistra (due colonne) -->
+    <div class="data-sections">
+      <!-- Prima riga con due sezioni affiancate -->
+      <div class="data-row">
+        <div class="data-section">
+          <div class="data-title">Connection & Status</div>
+          
+          <div class="data-group">
+            <div class="group-title">Connection Status</div>
+            <div class="data-item">
+              <span class="data-label">Joystick</span>
+              <span class="data-value">Connected<span class="status-indicator status-connected"></span></span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Signal Strength</span>
+              <span class="data-value">98%<span class="status-indicator status-connected"></span></span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Battery</span>
+              <span class="data-value">85%<span class="status-indicator status-warning"></span></span>
+            </div>
+          </div>
+
+          <div class="data-group">
+            <div class="group-title">Performance</div>
+            <div class="data-item">
+              <span class="data-label">Update Rate</span>
+              <span class="data-value">60 Hz</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Latency</span>
+              <span class="data-value">12 ms</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Packet Loss</span>
+              <span class="data-value">0.1%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="data-section">
+          <div class="data-title">Control Values</div>
+          
+          <div class="data-group">
+            <div class="group-title">Axis Values</div>
+            <div class="data-item">
+              <span class="data-label">Throttle (Y1)</span>
+              <span class="data-value" id="throttle-val">1024</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Yaw (X1)</span>
+              <span class="data-value" id="yaw-val">512</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Pitch (Y2)</span>
+              <span class="data-value" id="pitch-val">256</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Roll (X2)</span>
+              <span class="data-value" id="roll-val">768</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Axis 5</span>
+              <span class="data-value" id="axis5-val">1500</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Axis 6</span>
+              <span class="data-value" id="axis6-val">2000</span>
+            </div>
+          </div>
+
+          <div class="data-group">
+            <div class="group-title">Button States</div>
+            <div class="data-item">
+              <span class="data-label">Button 0</span>
+              <span class="data-value" id="btn0-state">Released</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Button 1</span>
+              <span class="data-value" id="btn1-state">Pressed</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Button 2</span>
+              <span class="data-value" id="btn2-state">Released</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Button 3</span>
+              <span class="data-value" id="btn3-state">Released</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sezione Grafici sulla destra -->
+    <div class="charts-section">
+      <!-- Grafico 1 -->
+      <div class="chart-container">
+        <div class="chart-title">Real-time Axis Monitor</div>
+        <div class="chart-canvas" id="chart1">
+          <div class="chart-grid"></div>
+          <div class="chart-data">
+            Throttle: <span id="chart1-throttle">1024</span><br>
+            Yaw: <span id="chart1-yaw">512</span><br>
+            Pitch: <span id="chart1-pitch">256</span><br>
+            Roll: <span id="chart1-roll">768</span>
+          </div>
+          <div class="chart-axes">
+            Time: <span id="chart1-time">0s</span><br>
+            Range: 0-2048
+          </div>
+          <div class="chart-line" id="line-throttle" style="top: 30%; left: 0; width: 70%; background: #ff0066;"></div>
+          <div class="chart-line" id="line-yaw" style="top: 40%; left: 0; width: 50%; background: #ffcc00;"></div>
+          <div class="chart-line" id="line-pitch" style="top: 60%; left: 0; width: 30%; background: #66ff00;"></div>
+          <div class="chart-line" id="line-roll" style="top: 50%; left: 0; width: 80%; background: #00ff88;"></div>
+          <div class="pulse-dot" style="top: 30%; right: 10px;"></div>
+        </div>
+      </div>
+
+      <!-- Grafico 2 -->
+      <div class="chart-container">
+        <div class="chart-title">Signal Quality & Performance</div>
+        <div class="chart-canvas" id="chart2">
+          <div class="chart-grid"></div>
+          <div class="chart-data">
+            Frequency: <span id="chart2-freq">2.4 GHz</span><br>
+            Amplitude: <span id="chart2-amp">-45 dBm</span><br>
+            Quality: <span id="chart2-quality">98%</span><br>
+            Noise: <span id="chart2-noise">-85 dBm</span>
+          </div>
+          <div class="chart-axes">
+            Time Domain<br>
+            Signal: OK
+          </div>
+          <canvas id="signalCanvas" width="600" height="220" style="width: 100%; height: calc(100% - 10px);"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulazione dati in tempo reale
+    let time = 0;
+    let signalPhase = 0;
+    const canvas = document.getElementById('signalCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    function drawSinusoidalSignal() {
+      // Pulisci canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Setup canvas
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerY = height / 2;
+      const amplitude = height * 0.3;
+      
+      // Disegna griglia
+      ctx.strokeStyle = 'rgba(100, 100, 150, 0.2)';
+      ctx.lineWidth = 1;
+      
+      // Linee orizzontali
+      for (let i = 0; i <= 5; i++) {
+        const y = (height / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      
+      // Linee verticali
+      for (let i = 0; i <= 10; i++) {
+        const x = (width / 10) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      
+      // Linea centrale
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(width, centerY);
+      ctx.stroke();
+      
+      // Disegna segnale sinusoidale principale
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let x = 0; x < width; x++) {
+        const frequency = 0.02; // Frequenza principale
+        const y = centerY + Math.sin((x * frequency) + signalPhase) * amplitude;
+        
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+      
+      // Aggiungi rumore e armoniche
+      ctx.strokeStyle = '#ffaa00';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      
+      for (let x = 0; x < width; x++) {
+        const mainFreq = 0.02;
+        const harmonic = 0.06;
+        const noise = (Math.random() - 0.5) * 10;
+        const y = centerY + 
+                  Math.sin((x * mainFreq) + signalPhase) * amplitude * 0.3 +
+                  Math.sin((x * harmonic) + signalPhase * 1.5) * amplitude * 0.1 +
+                  noise;
+        
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      
+      // Disegna cursore di scansione
+      const scanX = (signalPhase * 50) % width;
+      ctx.strokeStyle = '#ff0066';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(scanX, 0);
+      ctx.lineTo(scanX, height);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      
+      // Punto di misurazione
+      const measureY = centerY + Math.sin((scanX * 0.02) + signalPhase) * amplitude;
+      ctx.fillStyle = '#ff0066';
+      ctx.beginPath();
+      ctx.arc(scanX, measureY, 4, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      signalPhase += 0.1;
+    }
+    
+    function updateData() {
+      time += 0.1;
+      
+      // Aggiorna valori assi con simulazione
+      const throttle = Math.floor(1024 + Math.sin(time) * 500);
+      const yaw = Math.floor(512 + Math.cos(time * 0.7) * 300);
+      const pitch = Math.floor(256 + Math.sin(time * 1.2) * 200);
+      const roll = Math.floor(768 + Math.cos(time * 0.9) * 400);
+      
+      document.getElementById('throttle-val').textContent = throttle;
+      document.getElementById('yaw-val').textContent = yaw;
+      document.getElementById('pitch-val').textContent = pitch;
+      document.getElementById('roll-val').textContent = roll;
+      
+      // Aggiorna grafici
+      document.getElementById('chart1-throttle').textContent = throttle;
+      document.getElementById('chart1-yaw').textContent = yaw;
+      document.getElementById('chart1-pitch').textContent = pitch;
+      document.getElementById('chart1-roll').textContent = roll;
+      document.getElementById('chart1-time').textContent = time.toFixed(1) + 's';
+      
+      // Aggiorna larghezza delle linee in base ai valori
+      document.getElementById('line-throttle').style.width = (throttle / 2048 * 100) + '%';
+      document.getElementById('line-yaw').style.width = (yaw / 2048 * 100) + '%';
+      document.getElementById('line-pitch').style.width = (pitch / 2048 * 100) + '%';
+      document.getElementById('line-roll').style.width = (roll / 2048 * 100) + '%';
+      
+      // Simula cambiamenti stati bottoni
+      if (Math.random() > 0.98) {
+        const btnStates = ['Released', 'Pressed'];
+        document.getElementById('btn0-state').textContent = btnStates[Math.floor(Math.random() * 2)];
+        document.getElementById('btn1-state').textContent = btnStates[Math.floor(Math.random() * 2)];
+        document.getElementById('btn2-state').textContent = btnStates[Math.floor(Math.random() * 2)];
+        document.getElementById('btn3-state').textContent = btnStates[Math.floor(Math.random() * 2)];
+      }
+      
+      // Aggiorna dati del segnale
+      const quality = Math.floor(95 + Math.sin(time * 0.1) * 5);
+      const amplitude = Math.floor(-40 - Math.cos(time * 0.15) * 8);
+      const noise = Math.floor(-80 - Math.random() * 10);
+      
+      document.getElementById('chart2-quality').textContent = quality + '%';
+      document.getElementById('chart2-amp').textContent = amplitude + ' dBm';
+      document.getElementById('chart2-noise').textContent = noise + ' dBm';
+      
+      // Disegna il segnale sinusoidale
+      drawSinusoidalSignal();
+    }
+    
+    // Avvia simulazione
+    setInterval(updateData, 50); // Più frequente per animazione fluida del segnale
+  </script>
+</body>
+</html>

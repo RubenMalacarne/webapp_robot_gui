@@ -36,6 +36,8 @@ class JoyListener(Node):
             "robot_y": 0.0,
             "axis0": 0.0,
             "axis1": 0.0,
+            "axis2": 0.0, 
+            "axis3": 0.0
         }
 
     def joy_callback(self, msg):
@@ -58,13 +60,20 @@ class JoyListener(Node):
                 state["robot_y"] = state["y"]
                 self.get_logger().info(f"🤖 ROBOT POSITION UPDATED to ({state['robot_x']}, {state['robot_y']})")
 
-        if not state["frozen"] and len(msg.axes) >= 2:
-            axis0 = -msg.axes[0]
-            axis1 = -msg.axes[1]
-            state["x"] = axis0 * state["max_range"]
-            state["y"] = axis1 * state["max_range"]
-            state["axis0"] = axis0
-            state["axis1"] = axis1
+        if not state["frozen"]:
+            if len(msg.axes) >= 2:
+                axis0 = -msg.axes[0]  # Left stick horizontal
+                axis1 = -msg.axes[1]  # Left stick vertical
+                state["axis0"] = axis0
+                state["axis1"] = axis1
+                state["x"] = axis0 * state["max_range"]
+                state["y"] = axis1 * state["max_range"]
+
+            if len(msg.axes) >= 4:
+                axis2 = -msg.axes[2]  # Right stick horizontal
+                axis3 = -msg.axes[3]  # Right stick vertical
+                state["axis2"] = axis2
+                state["axis3"] = axis3
         elif state["frozen"]:
             state["x"] = state["frozen_x"]
             state["y"] = state["frozen_y"]
