@@ -21,9 +21,17 @@
             align-items: center;
         }
         
-        .container {
-            width: 80vw;
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
             height: 70vh;
+            width: 90vw;
+            align-items: center;
+        }
+        
+        .container {
+            flex: 1;
+            height: 100%;
             background: rgba(30, 30, 50, 0.8);
             border: 2px solid #4a4a6a;
             border-radius: 15px;
@@ -34,13 +42,182 @@
             backdrop-filter: blur(10px);
         }
         
+        .control-panel {
+            width: 220px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .button-group {
+            background: rgba(30, 30, 50, 0.8);
+            border: 2px solid #4a4a6a;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 
+                0 0 20px rgba(100, 100, 150, 0.2),
+                inset 0 0 10px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .button-group h3 {
+            color: #00ff88;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-button {
+            width: 100%;
+            padding: 12px 8px;
+            margin: 8px 0;
+            background: linear-gradient(135deg, #4a4a6a 0%, #3a3a5a 100%);
+            border: 1px solid #6a6a8a;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-button:hover {
+            background: linear-gradient(135deg, #5a5a7a 0%, #4a4a6a 100%);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .control-button:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .control-button.start {
+            background: linear-gradient(135deg, #00aa44 0%, #008833 100%);
+            border-color: #00cc55;
+        }
+        
+        .control-button.start:hover {
+            background: linear-gradient(135deg, #00cc55 0%, #00aa44 100%);
+        }
+        
+        .control-button.stop {
+            background: linear-gradient(135deg, #cc3300 0%, #aa2200 100%);
+            border-color: #ff4422;
+        }
+        
+        .control-button.stop:hover {
+            background: linear-gradient(135deg, #ff4422 0%, #cc3300 100%);
+        }
+        
+        .control-button.disabled {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-color: #3a3a3a;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        /* Residual Jump Slider */
+        .residual-container {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(20, 20, 40, 0.6);
+            border-radius: 8px;
+            border: 1px solid #4a4a6a;
+        }
+        
+        .residual-label {
+            display: block;
+            color: #00ff88;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .residual-slider {
+            width: 100%;
+            height: 6px;
+            background: #2a2a2a;
+            border-radius: 3px;
+            outline: none;
+            border: 1px solid #4a4a6a;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .residual-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+            border: 2px solid #ffffff;
+        }
+        
+        .residual-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+            border: 2px solid #ffffff;
+        }
+        
+        .residual-slider::-webkit-slider-track {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #2a2a2a 0%, #4a4a6a 100%);
+            border-radius: 3px;
+        }
+        
+        .residual-slider::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #2a2a2a 0%, #4a4a6a 100%);
+            border-radius: 3px;
+            border: none;
+        }
+        
+        .residual-value {
+            color: #00ff88;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        
         .alpine-title {
             position: absolute;
-            top: 20px;
-            left: 50%;
+            top: 40px;
+            left: 45%;
             transform: translateX(-50%);
             color: white;
-            font-size: 24px;
+            font-size: 35px;
             text-shadow: 0 0 10px rgba(255,255,255,0.7);
             z-index: 20;
         }
@@ -114,10 +291,9 @@
         .controls {
             position: absolute;
             bottom: 20px;
-            right: 20px;
+            left: 20px;
             color: #8888aa;
             font-size: 12px;
-            text-align: right;
             z-index: 20;
         }
         
@@ -137,7 +313,7 @@
         .status-indicator {
             position: absolute;
             top: 20px;
-            right: 20px;
+            right: 110px;
             width: 12px;
             height: 12px;
             background: #ff4444;
@@ -286,48 +462,104 @@
             transition: all 0.05s ease;
             z-index: 25;
         }
+        
+        /* Jump indicator */
+        .jump-indicator {
+            position: absolute;
+            top: 90px;
+            right: 160px;
+            width: 80px;
+            height: 30px;
+            background: rgba(255, 0, 0, 0.3);
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff4444;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            opacity: 0.3;
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+        
+        .jump-indicator.active {
+            background: rgba(255, 0, 0, 0.8);
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.8);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
-    <div class="container" id="container">
-        <div class="alpine-title">alpine robot</div>
-        <div class="grid"></div>
-        
-        <!-- Arganelli rossi -->
-        <div class="winch winch-left" title="Arganello Sinistro"></div>
-        <div class="winch winch-right" title="Arganello Destro"></div>
-        
-        <!-- Robot triangolare viola -->
-        <div class="robot" title="Robot"></div>
-        
-        <!-- Linee tratteggiate di collegamento -->
-        <div class="dashed-line line-left" id="lineLeft"></div>
-        <div class="dashed-line line-right" id="lineRight"></div>
-        
-        <!-- Nuove linee tratteggiate verso il mirino -->
-        <div class="crosshair-line crosshair-line-left" id="crosshairLineLeft"></div>
-        <div class="crosshair-line crosshair-line-right" id="crosshairLineRight"></div>
-        
-        <!-- Vettore distanza -->
-        <div class="distance-vector" id="distanceVector"></div>
-        <div class="distance-label" id="distanceLabel">ΔX: 0, ΔY: 0</div>
-        
-        <div class="crosshair" id="crosshair">
-            <div class="center-dot"></div>
+    <div class="main-wrapper">
+        <div class="alpine-title">Alpine robot</div>
+
+        <div class="jump-indicator" id="jumpIndicator">JUMP</div>
+        <div class="container" id="container">
+            <div class="grid"></div>
+            
+            <!-- Arganelli rossi -->
+            <div class="winch winch-left" title="winch-left"></div>
+            <div class="winch winch-right" title="winch-right"></div>
+            
+            <!-- Robot triangolare viola -->
+            <div class="robot" title="Robot"></div>
+            
+            <!-- Linee tratteggiate di collegamento -->
+            <div class="dashed-line line-left" id="lineLeft"></div>
+            <div class="dashed-line line-right" id="lineRight"></div>
+            
+            <!-- Nuove linee tratteggiate verso il mirino -->
+            <div class="crosshair-line crosshair-line-left" id="crosshairLineLeft"></div>
+            <div class="crosshair-line crosshair-line-right" id="crosshairLineRight"></div>
+            
+            <!-- Vettore distanza -->
+            <div class="distance-vector" id="distanceVector"></div>
+            <div class="distance-label" id="distanceLabel">ΔX: 0, ΔY: 0</div>
+            
+            <div class="crosshair" id="crosshair">
+                <div class="center-dot"></div>
+            </div>
+            <div class="joystick-info" id="joystick-info">
+            </div>
+            <div class="controls">
+                joystick control<br>
+                Topic: /joy <br>
+                Axis 0 (X): Move crosshair horizontally<br>
+                Axis 1 (Y): Move crosshair vertically<br>
+                Button 0: Jump<br>
+                🔴 Winches | 🔷 Robot | ⊹ Crosshair | → Vector<br>
+            </div>
+            <div class="status-indicator" id="status"></div>
         </div>
-        <div class="coordinates" id="coordinates">X: 0, Y: 0</div>
-        <div class="joystick-info" id="joystick-info">
-            Axis 0: 0.000<br>
-            Axis 1: 0.000
+        
+        <!-- Pannelli di controllo -->
+        <div class="control-panel">
+            <!-- Primo gruppo: Controlli principali -->
+            <div class="button-group">
+                <h3>Main Controls</h3>
+                <div class="residual-container">
+                    <label for="residualSlider" class="residual-label">Residual Jump</label>
+                    <input type="range" id="residualSlider" class="residual-slider" min="0" max="100" value="0">
+                    <div class="residual-value" id="residualValue">0</div>
+                </div>
+                <button class="control-button" id="calibration">Calibration</button>
+                <button class="control-button" id="initialization">Initialization</button>
+                <button class="control-button start" id="startStop">Start</button>
+            </div>
+            
+            <!-- Secondo gruppo: Test controls -->
+            <div class="button-group">
+                <h3>Test Controls</h3>
+                <button class="control-button" id="testSingleJump">Test Single Jump</button>
+                <button class="control-button" id="testMultiJump">Test Multi Jump</button>
+                <button class="control-button" id="discreteJump">Discrete Jump</button>
+                <button class="control-button" id="optiJump">Opti Jump</button>
+            </div>
         </div>
-        <div class="controls">
-            Controllo tramite Joystick ROS2<br>
-            Topic: /joy | Assi: 0 (X), 1 (Y)<br>
-            🔴 Arganelli | 🔷 Robot | ⊹ Mirino | → Vettore<br>
-            ⎯ Linee blu: collegamento arganelli-mirino<br>
-            FREEZE: Axis4 = -1
-        </div>
-        <div class="status-indicator" id="status"></div>
     </div>
     
     <script>
@@ -342,18 +574,40 @@
         const crosshairLineRight = document.getElementById('crosshairLineRight');
         const distanceVector  = document.getElementById('distanceVector');
         const distanceLabel   = document.getElementById('distanceLabel');
+        const jumpIndicator   = document.getElementById('jumpIndicator');
         
         /* ---------- CONFIG ---------- */
-        const STORE_NAME = 'crosshair';               // <— NOTA: cambai qua se vuoi altri state “joy”, “camera” …
+        const STORE_NAME = 'joy';  // Cambiato da 'crosshair' a 'joy' per leggere i dati del joystick
         const STATE_URL  = `/state/${STORE_NAME}`;
         const UPDATE_URL = `/update/${STORE_NAME}`;
         let lastUpdate = Date.now();
         let currentState = { x: 0, y: 0, robot_x: 0, robot_y: 0 };
+        
+        // Joystick configuration
+        const joystickRange = 150; // Range di movimento del crosshair in pixel (fisso)
+
+        // Controllo pulsanti
+        let isStarted = false;
+        const startStopBtn = document.getElementById('startStop');
+        const residualSlider = document.getElementById('residualSlider');
+        const residualValue = document.getElementById('residualValue');
+        
+        // Pulsanti test che si alternano (solo uno attivo alla volta)
+        const testButtons = [
+            document.getElementById('testSingleJump'),
+            document.getElementById('testMultiJump'),
+            document.getElementById('discreteJump'),
+            document.getElementById('optiJump')
+        ];
+        let activeTestButton = null;
 
         function updateGeometry(crosshairX, crosshairY, robotX, robotY) {
             const containerRect = container.getBoundingClientRect();
             const containerWidth = containerRect.width;
             const containerHeight = containerRect.height;
+
+            // Conversion factor: pixels per meter (adjust based on your setup)
+            const pixelsPerMeter = 100; // Example: 100 pixels = 1 meter
 
             // Arrow triangle dimensions (match your CSS exactly!)
             const arrowHeight = 35; // height from CSS (border-bottom: 35px solid)
@@ -378,68 +632,31 @@
             crosshair.style.top = (arrowTipY + crosshairY) + 'px';
             crosshair.style.transform = `translate(-50%, -50%)`;
 
-            // Winches position (fixed)
-            const winchLeftX = 100;
-            const winchLeftY = 72.5;
-            const winchRightX = containerWidth - 100;
-            const winchRightY = 72.5;
-
-            // Dashed lines from winches directly to arrow tip
-            updateDashedLine(lineLeft, winchLeftX, winchLeftY, arrowTipX, arrowTipY);
-            updateDashedLine(lineRight, winchRightX, winchRightY, arrowTipX, arrowTipY);
-
             // Vector from arrow tip to displaced crosshair (useful if joystick moves crosshair)
-            const deltaX = crosshairX;
-            const deltaY = crosshairY;
-            const vectorDistance = Math.sqrt(deltaX**2 + deltaY**2);
+            const deltaX = crosshairX / pixelsPerMeter; // Convert to meters
+            const deltaY = crosshairY / pixelsPerMeter; // Convert to meters
+            const vectorDistance = Math.sqrt(deltaX**2 + deltaY**2); // Distance in meters
             const vectorAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 
-            if (vectorDistance > 5) {
+            if (vectorDistance > 0.05) { // Threshold in meters
                 distanceVector.style.display = 'block';
                 distanceVector.style.left = arrowTipX + 'px';
                 distanceVector.style.top = arrowTipY + 'px';
-                distanceVector.style.width = vectorDistance + 'px';
+                distanceVector.style.width = vectorDistance * pixelsPerMeter + 'px'; // Convert back to pixels
                 distanceVector.style.transform = `rotate(${vectorAngle}deg)`;
 
-                const labelX = arrowTipX + deltaX * 0.5;
-                const labelY = arrowTipY + deltaY * 0.5 - 20;
+                const labelX = arrowTipX + crosshairX * 0.5;
+                const labelY = arrowTipY + crosshairY * 0.5 - 20;
 
                 distanceLabel.style.display = 'block';
                 distanceLabel.style.left = labelX + 'px';
                 distanceLabel.style.top = labelY + 'px';
-                distanceLabel.textContent = `ΔX: ${Math.round(deltaX)}, ΔY: ${Math.round(deltaY)}`;
+                distanceLabel.textContent = `ΔX: ${deltaX.toFixed(2)} m, ΔY: ${deltaY.toFixed(2)} m, Distance: ${vectorDistance.toFixed(2)} m`;
             } else {
                 distanceVector.style.display = 'none';
                 distanceLabel.style.display = 'none';
             }
         }
-
-        // Keep track of robot-relative positions clearly
-        async function pollState() {
-            while (true) {
-                try {
-                    const res = await fetch('/state');
-                    const data = await res.json();
-
-                    coordinates.textContent = `X: ${Math.round(data.x)}, Y: ${Math.round(data.y)}`;
-                    joystickInfo.innerHTML = `Axis 0: ${data.axis0.toFixed(3)}<br>Axis 1: ${data.axis1.toFixed(3)}`;
-
-                    updateGeometry(data.x, data.y, data.robot_x, data.robot_y);
-
-                    const now = Date.now();
-                    statusIndicator.classList.toggle('connected', now - lastUpdate < 1000);
-                    lastUpdate = now;
-
-                } catch (e) {
-                    console.error('Errore connessione:', e);
-                    statusIndicator.classList.remove('connected');
-                }
-
-                await new Promise(r => setTimeout(r, 50));
-            }
-        }
-
-
         
         function updateDashedLine(line, startX, startY, endX, endY) {
             const dx = endX - startX;
@@ -453,23 +670,53 @@
             line.style.transform = `rotate(${angle}deg)`;
         }
         
-        
         /* ---------- POLLING ---------- */
         async function pollState() {
             while (true) {
                 try {
-                    const res  = await fetch(STATE_URL);   // <— usa l’endpoint parametrico
+                    const res  = await fetch(STATE_URL);
                     const data = await res.json();
 
-                    currentState = data;
+                    const axes = Array.isArray(data.axes) ? data.axes : [];
+                    const buttons = Array.isArray(data.buttons) ? data.buttons : [];
+
+                    // Leggi gli assi del joystick (axis 0 = X, axis 1 = Y)
+                    const axis0 = axes[0] ?? 0; // X axis
+                    const axis1 = axes[1] ?? 0; // Y axis
+                    
+                    // Converte i valori degli assi (-1 a +1) in coordinate pixel
+                    const crosshairX = axis0 * joystickRange;
+                    const crosshairY = axis1 * joystickRange;
+                    
+                    // Gestione del bottone 0 per il jump
+                    const button0 = buttons[0] ?? 0;
+                    
+                    // Aggiorna l'indicatore del jump
+                    jumpIndicator.classList.toggle('active', button0 === 1);
+                    
+                    if (button0 === 1) {
+                        console.log('Jump button pressed!');
+                        // Qui puoi aggiungere la logica per il jump
+                    }
+
+                    // Aggiorna lo stato corrente
+                    currentState = { 
+                        x: crosshairX, 
+                        y: crosshairY, 
+                        robot_x: 0, // Il JOY_STATE non ha robot_x/robot_y, li impostiamo a 0
+                        robot_y: 0,
+                        axis0: axis0,
+                        axis1: axis1,
+                        button0: button0
+                    };
 
                     coordinates.textContent =
-                        `X: ${Math.round(data.x)}, Y: ${Math.round(data.y)}`;
+                        `X: ${Math.round(crosshairX)}, Y: ${Math.round(crosshairY)}`;
 
                     joystickInfo.innerHTML =
-                        `Axis 0: ${data.axis0.toFixed(3)}<br>Axis 1: ${data.axis1.toFixed(3)}`;
+                        `Axis 0: ${axis0.toFixed(3)}<br>Axis 1: ${axis1.toFixed(3)}<br>Button 0: ${button0}`;
 
-                    updateGeometry(data.x, data.y, data.robot_x, data.robot_y);
+                    updateGeometry(crosshairX, crosshairY, currentState.robot_x, currentState.robot_y);
 
                     const now = Date.now();
                     statusIndicator.classList.toggle('connected', now - lastUpdate < 1000);
@@ -483,7 +730,75 @@
             }
         }
 
+        /* ---------- BUTTON HANDLERS ---------- */
+        // Residual Jump Slider
+        residualSlider.addEventListener('input', function() {
+            residualValue.textContent = this.value;
+            console.log(`Residual Jump: ${this.value}`);
+        });
         
+        // Start/Stop toggle button
+        startStopBtn.addEventListener('click', function() {
+            isStarted = !isStarted;
+            if (isStarted) {
+                this.textContent = 'Stop';
+                this.className = 'control-button stop';
+                console.log('Sistema avviato');
+            } else {
+                this.textContent = 'Start';
+                this.className = 'control-button start';
+                console.log('Sistema fermato');
+            }
+        });
+
+        // Main control buttons
+        document.getElementById('calibration').addEventListener('click', function() {
+            console.log('Calibration avviata');
+            // Qui aggiungi la logica per calibration
+        });
+
+        document.getElementById('initialization').addEventListener('click', function() {
+            console.log('Initialization avviata');
+            // Qui aggiungi la logica per initialization
+        });
+
+        // Test buttons che si alternano (solo uno attivo alla volta)
+        testButtons.forEach((button) => {
+            button.addEventListener('click', function() {
+                console.log(`${this.textContent} selezionato`);
+                
+                // Se c'è già un pulsante attivo, riabilitalo
+                if (activeTestButton && activeTestButton !== this) {
+                    activeTestButton.classList.remove('disabled');
+                    activeTestButton.style.pointerEvents = 'auto';
+                    activeTestButton.style.opacity = '1';
+                }
+                
+                // Disabilita il pulsante corrente
+                this.classList.add('disabled');
+                this.style.pointerEvents = 'none';
+                this.style.opacity = '0.4';
+                
+                // Imposta come pulsante attivo
+                activeTestButton = this;
+                
+                // Qui aggiungi la logica specifica per ogni test
+                switch(this.id) {
+                    case 'testSingleJump':
+                        console.log('Modalità: Test Single Jump attivata');
+                        break;
+                    case 'testMultiJump':
+                        console.log('Modalità: Test Multi Jump attivata');
+                        break;
+                    case 'discreteJump':
+                        console.log('Modalità: Discrete Jump attivata');
+                        break;
+                    case 'optiJump':
+                        console.log('Modalità: Opti Jump attivata');
+                        break;
+                }
+            });
+        });
         
         /* ---------- INIT & RESIZE ---------- */
         window.addEventListener('load', () => {

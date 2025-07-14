@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ROS 2 Web Interface</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h2>ROS 2 Data:</h2>
+    <div id="data-box">Waiting for data...</div>
+
+    <script>
+        const socket = io();
+
+        socket.on('ros2_data', function(msg) {
+            document.getElementById("data-box").innerText = msg.data;
+        });
+    </script>
+</body>
+</html>
