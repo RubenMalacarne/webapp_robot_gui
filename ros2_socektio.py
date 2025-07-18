@@ -24,8 +24,8 @@ class SensorDataSender(Node):
 
         # Timer per temperatura ogni 2 secondi
         self.timer_temp = self.create_timer(2.0, self.send_temperature)
-        self.timer_voltage = self.create_timer(1.5, self.send_random_voltage)
-        self.timer_current = self.create_timer(1.5, self.send_random_current)
+        self.timer_voltage = self.create_timer(0.1, self.send_random_voltage)
+        self.timer_current = self.create_timer(0.2, self.send_random_current)
         # Contatore per simulazione
         self.time_counter = 0
     #test
