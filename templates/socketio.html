@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>ROS 2 → Web via Socket.IO</title></head>
+  <head><title>ROS 2 → Web via Socket.IO</title></head>
+  <body style="font-family:sans-serif;text-align:center;margin-top:20vh">
+    <h1>Temperatura attuale:</h1>
+    <h2 id="value">-- °C</h2>
+
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script>
+      const socket = io();             // connette allo stesso host/porta
+      socket.on('temperature', data => {
+        document.getElementById('value').innerText =  data.value + ' °C';
+      });
+    </script>
+  </body>
+</html>
