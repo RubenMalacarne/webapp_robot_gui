@@ -7,6 +7,8 @@ import eventlet
 eventlet.monkey_patch()   
 
 
+from .handler_data import init_temperature_handler
+
 app = Flask(__name__)
 bp = Blueprint('main', __name__)
 
@@ -21,25 +23,8 @@ socketio = SocketIO(
     logger=True,
     engineio_logger=False
 )
-clients = {}
 
-@socketio.on('register')
-def handle_register(data):
-    node = data.get('node', 'unknown')
-    clients[request.sid] = node
-    log.info(f"📥 Nodo registrato: {node} (sid: {request.sid})")
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    node = clients.pop(request.sid, 'unknown')
-    log.info(f"❌ Disconnessione nodo: {node} (sid: {request.sid})")
-    
-@socketio.on('temperature')
-def handle_temperature(value):
-    node = clients.get(request.sid, 'unknown')
-    log.info(f"🌡️ Ricevuto da {node}: {value} °C")
-    # Rimbalza a tutti i client web
-    socketio.emit('temperature', value, broadcast=True)
+init_temperature_handler(socketio)
 
 
 @bp.route('/')
@@ -52,7 +37,8 @@ def load_page(page):
         return render_template(page)
     except:
         return "Pagina non trovata", 404
-
+    
+# for POST requests to update shared state
 @bp.route('/state/<name>', methods=['GET'])
 def state(name):
     store = get_store(name)

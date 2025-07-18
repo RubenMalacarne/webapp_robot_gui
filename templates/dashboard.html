@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Voltage & Current Monitor</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -303,17 +302,15 @@
     </div>
   </div>
 
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include Socket.IO -->
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  
   <script>
-    // Simulate Socket.IO connection for demo
-    const socket = {
-      connected: false,
-      on: function(event, callback) {
-        // Simulate connection events
-      }
-    };
     
     // Data storage
-    const maxDataPoints = 100;
+    const maxDataPoints = 1000;
     let voltageData = [];
     let currentData = [];
     let timeLabels = [];
@@ -461,7 +458,62 @@
       // Update statistics
       updateStats(voltage, voltageStats, 'voltage');
       updateStats(current, currentStats, 'current');
+      
+      // Update connection status indicators
+      updateConnectionStatus();
     }
+
+    // Update connection status
+    function updateConnectionStatus() {
+      elements.voltage.status.classList.add('connected');
+      elements.current.status.classList.add('connected');
+    }
+
+    // Socket.IO connection
+    const socket = io();
+    
+    // Handle connection status
+    socket.on('connect', function() {
+      console.log('Connected to server');
+      updateConnectionStatus();
+    });
+    
+    socket.on('disconnect', function() {
+      console.log('Disconnected from server');
+      elements.voltage.status.classList.remove('connected');
+      elements.current.status.classList.remove('connected');
+    });
+    
+    /*
+    // Handle sensor data (both voltage and current together)
+    
+    socket.on('sensor_data', function(data) {
+      const voltage = parseFloat(data.voltage || 0);
+      const current = parseFloat(data.current || 0);
+      const timestamp = data.timestamp || Date.now();
+      
+      addDataPoint(timestamp, voltage, current);
+    });
+    */
+    // Handle individual voltage data
+    socket.on('voltage_data', function(data) {
+      const voltage = parseFloat(data.value || 0);
+      const timestamp = data.timestamp || Date.now();
+      
+      // If we don't have recent current data, use the last known value or 0
+      const lastCurrent = currentData.length > 0 ? currentData[currentData.length - 1].y : 0;
+      addDataPoint(timestamp, voltage, lastCurrent);
+    });
+
+    // Handle individual current data
+    socket.on('current_data', function(data) {
+      const current = parseFloat(data.value || 0);
+      const timestamp = data.timestamp || Date.now();
+      
+      // If we don't have recent voltage data, use the last known value or 0
+      const lastVoltage = voltageData.length > 0 ? voltageData[voltageData.length - 1].y : 0;
+      addDataPoint(timestamp, lastVoltage, current);
+    });
 
     // Control buttons
     document.getElementById('pause-btn').addEventListener('click', function() {
@@ -510,14 +562,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // Simulate data for testing
-    let testTime = 0;
-    setInterval(() => {
-      const voltage = 12 + Math.sin(testTime * 0.1) * 2 + (Math.random() - 0.5) * 0.5;
-      const current = 2 + Math.cos(testTime * 0.15) * 0.8 + (Math.random() - 0.5) * 0.2;
-      addDataPoint(Date.now(), voltage, current);
-      testTime++;
-    }, 100);
   </script>
 </body>
 </html>

@@ -294,6 +294,9 @@
 </head>
 <body>
 
+  <div class="connection-status disconnected" id="connection-status">
+    Disconnesso
+  </div>
   <div class="section-row">
     <div class="archive-section">
       <div class="archive-title">Joystick Mode 2 Layout</div>
@@ -343,7 +346,6 @@
     </div>
   </div>
 
-  <!-- Nuova sezione controlli con layout radiocomando -->
   <div class="controls-section">
     <div class="radio-layout">
       <!-- Lato Sinistro -->
@@ -407,10 +409,14 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+  
   <script>
     /* ---------------- MAPPING CONFIG ---------------- */ /* ---------- SEZIONE CONFIG ---------- */
-    const STORE_NAME = 'joy';                 // <-- da quale store leggere
-    const STATE_URL  = `/state/${STORE_NAME}`;
+    const socket = io(); // Connessione al server Socket.IO
+    
+    // Elementi DOM
+    const connectionStatus = document.getElementById('connection-status');
 
     const joystickSize = 150;                 // px (width/height del quadrato joystick)
     const half         = joystickSize / 2;    // 75
@@ -505,20 +511,79 @@
         }
     }
 
-
-    /* -------------- POLLING /state ------------------ */
-      
-    async function poll() {
-      try {
-        const res  = await fetch(STATE_URL);   // <-- usa l’endpoint parametrico
-        const json = await res.json();
-        updateFromState(json);
-      } catch (err) {
-        console.error(`Errore fetch ${STATE_URL}:`, err);
+    function updateConnectionStatus(connected) {
+      if (connected) {
+        connectionStatus.textContent = 'Connected';
+        connectionStatus.className = 'connection-status connected';
+      } else {
+        connectionStatus.textContent = 'Disconnected';
+        connectionStatus.className = 'connection-status disconnected';
       }
     }
+    /* -------------- SOCKET.IO EVENT HANDLERS ------------------ */
+    
+    // Connessione stabilita
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server');
+      updateConnectionStatus(true);
+    });
 
-    setInterval(poll, 10); // ~50 Hz
+    // Disconnessione
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+      updateConnectionStatus(false);
+    });
+
+    // Ricezione dati joystick
+    socket.on('joystick_data', (data) => {
+      updateFromJoystickData(data);
+    });
+
+    // Gestione errori
+    socket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+      updateConnectionStatus(false);
+    });
+
+     /* -------------- INVIO DATI SLIDER ------------------ */
+    
+    function sendSliderData() {
+      const sliderData = {
+        ruby: parseInt(rubySlider.value),
+        luca: parseInt(lucaSlider.value),
+        focchi: parseInt(focchiSlider.value)
+      };
+      
+      socket.emit('slider_data', sliderData);
+    }
+
+    // Event listeners per i slider
+    rubySlider.addEventListener('input', sendSliderData);
+    lucaSlider.addEventListener('input', sendSliderData);
+    focchiSlider.addEventListener('input', sendSliderData);
+
+    /* -------------- RICONNESSIONE AUTOMATICA ------------------ */
+    
+    // Socket.IO gestisce automaticamente la riconnessione,
+    // ma possiamo aggiungere logica personalizzata se necessario
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`Reconnected after ${attemptNumber} attempts`);
+      updateConnectionStatus(true);
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`Reconnection attempt ${attemptNumber}`);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.log('Reconnection failed');
+      updateConnectionStatus(false);
+    });
+
+    // Inizializzazione
+    updateConnectionStatus(socket.connected);
+    
+
     
   </script>
 
