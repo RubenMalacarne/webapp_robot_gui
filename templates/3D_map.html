@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Point Cloud Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="grid"></div>
+  
+  <div class="main-container">
+    <div class="viewer-section">
+      <div class="viewer-header">
+        <h3 class="viewer-title">Point Cloud 3D Viewer</h3>
+        <p class="viewer-info">Use mouse to rotate • Wheel to zoom • Right-click to pan</p>
+      </div>
+      
+      <div id="three-container"></div>
+      
+      <div class="status-bar">
+        <div class="status-item">
+          Points: <span class="status-value" id="point-count">0</span>
+        </div>
+        <div class="status-item">
+          FPS: <span class="status-value" id="fps-counter">60</span>
+        </div>
+        <div class="status-item">
+          Memory: <span class="status-value" id="memory-usage">0 MB</span>
+        </div>
+        <div class="connection-status">
+          <span class="status-item">Socket.IO:</span>
+          <div class="status-dot" id="connection-dot"></div>
+          <span class="status-value" id="connection-status">Disconnected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sezione Controlli (Destra) -->
+    <div class="controls-section">
+      <!-- Controlli Point Cloud -->
+      <div class="control-group">
+        <div class="control-title">Point Cloud Settings</div>
+        
+        <div class="control-item">
+          <label class="control-label">Point Density</label>
+          <input type="range" class="control-slider" id="density-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+          <span class="value-display" id="density-value">1.0</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Point Size</label>
+          <input type="range" class="control-slider" id="size-slider" min="0.5" max="10.0" step="0.5" value="2.0">
+          <span class="value-display" id="size-value">2.0</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Opacity</label>
+          <input type="range" class="control-slider" id="opacity-slider" min="0.1" max="1.0" step="0.1" value="0.8">
+          <span class="value-display" id="opacity-value">0.8</span>
+        </div>
+      </div>
+
+      <!-- Controlli Filtri -->
+      <div class="control-group">
+        <div class="control-title">Filters & Processing</div>
+        
+        <div class="control-item">
+          <label class="control-label">Min Distance (m)</label>
+          <input type="number" class="control-input" id="min-distance" value="0.1" step="0.1" min="0">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Max Distance (m)</label>
+          <input type="number" class="control-input" id="max-distance" value="100" step="1" min="1">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Height Filter (m)</label>
+          <input type="range" class="control-slider" id="height-filter" min="-10" max="10" step="0.5" value="0">
+          <span class="value-display" id="height-value">0</span>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="apply-filters">Apply Filters</button>
+          <button class="button" id="reset-filters">Reset</button>
+        </div>
+      </div>
+
+      <!-- Controlli Socket.IO -->
+      <div class="control-group">
+        <div class="control-title">Connection Settings</div>
+        
+        <div class="control-item">
+          <label class="control-label">Server URL</label>
+          <input type="text" class="control-input" id="server-url" value="http://localhost:3000" placeholder="http://localhost:3000">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Update Rate (Hz)</label>
+          <input type="range" class="control-slider" id="update-rate" min="1" max="60" step="1" value="30">
+          <span class="value-display" id="rate-value">30</span>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="connect-btn">Connect</button>
+          <button class="button" id="disconnect-btn">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Controlli Esportazione -->
+      <div class="control-group">
+        <div class="control-title">Export & Tools</div>
+        
+        <div class="control-item">
+          <button class="button" id="clear-points">Clear Points</button>
+          <button class="button" id="generate-sample">Generate Sample</button>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="save-screenshot">Screenshot</button>
+          <button class="button" id="reset-camera">Reset Camera</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script_3D_map.js') }}"></script>
+</body>
+</html>

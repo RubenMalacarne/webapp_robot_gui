@@ -1,0 +1,794 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+  font-family: 'Consolas', 'Monaco', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Alpine.html specific body layout */
+body.alpine-layout {
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+}
+
+.navbar {
+  display: flex;
+  background-color: #1a1a2e;
+  padding-left: 10px;
+  border-bottom: 2px solid #4a4a6a;
+  align-items: center;
+}
+
+.navbar-logo {
+  width: 36px;
+  height: 36px;
+  background: url('logo.svg') no-repeat center center;
+  background-size: contain;
+  margin-right: 10px;
+}
+
+.tab {
+  padding: 10px 18px;
+  margin-right: 4px;
+  background: #8a0c8f;
+  color: #000;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.tab.active {
+  background: #ff006a;
+  color: #fff;
+}
+
+.tab:hover:not(.active) {
+  background: #c000fa;
+}
+
+iframe {
+  flex-grow: 1;
+  border: none;
+}
+
+.grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
+  background-image:
+    linear-gradient(rgba(100, 100, 150, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 100, 150, 0.3) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+}
+
+.main-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  gap: 2px;
+}
+
+.viewer-section {
+  width: 70%;
+  height: 100%;
+  background: rgba(30, 30, 45, 0.9);
+  border: 2px solid #4a4a6a;
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.controls-section {
+  width: 30%;
+  height: 100%;
+  background: rgba(40, 40, 60, 0.9);
+  border: 2px solid #4a4a6a;
+  border-radius: 15px;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: 0 0 20px rgba(100, 100, 200, 0.3);
+}
+
+.viewer-header {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #555;
+}
+
+.viewer-title {
+  font-size: 18px;
+  color: #00ff88;
+  margin: 0;
+}
+
+.viewer-info {
+  font-size: 12px;
+  color: #aaa;
+  margin: 5px 0 0 0;
+}
+
+.control-group {
+  background: rgba(30, 30, 45, 0.8);
+  border: 1px solid #555;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+}
+
+.control-title {
+  font-size: 16px;
+  color: #00ff88;
+  margin-bottom: 15px;
+  border-bottom: 1px dashed #555;
+  padding-bottom: 8px;
+}
+
+.control-item {
+  margin-bottom: 15px;
+}
+
+.control-label {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.control-input {
+  width: 100%;
+  background: rgba(20, 20, 30, 0.8);
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 8px 12px;
+  color: #00ff88;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+}
+
+.control-input:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+}
+
+.control-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(20, 20, 30, 0.8);
+  outline: none;
+  border: 1px solid #555;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff88;
+  cursor: pointer;
+  border: 2px solid #004f33;
+  box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00ff88;
+  cursor: pointer;
+  border: 2px solid #004f33;
+  box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+}
+
+.value-display {
+  display: inline-block;
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-left: 10px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.button {
+  background: linear-gradient(135deg, #004f33, #00ff88);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 5px 5px 5px 0;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.4);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.status-bar {
+  position: absolute;
+  bottom: 15px;
+  left: 20px;
+  right: 20px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-item {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.status-value {
+  color: #00ff88;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4444;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+  background: #00ff88;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.color-preset {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  margin: 2px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.color-preset:hover {
+  border-color: #00ff88;
+  transform: scale(1.1);
+}
+
+.color-preset.active {
+  border-color: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+}
+
+#three-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+/* ============ ALPINE.HTML SPECIFIC STYLES ============ */
+
+/* Main Layout for Alpine */
+.main-wrapper {
+  display: flex;
+  gap: 20px;
+  height: 70vh;
+  width: 90vw;
+  align-items: center;
+}
+
+/* Base container definition */
+.container {
+  position: relative;
+  background: rgba(30, 30, 45, 0.9);
+  border: 2px solid #4a4a6a;
+  border-radius: 15px;
+}
+
+/* Container specific to Alpine (viewport container) */
+.container.alpine-container {
+  flex: 1;
+  height: 100%;
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #4a4a6a;
+  border-radius: 15px;
+  position: relative;
+  box-shadow: 
+    0 0 30px rgba(100, 100, 150, 0.3),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Control Panel for Alpine */
+.control-panel {
+  width: 220px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Button Groups */
+.button-group {
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #4a4a6a;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 
+    0 0 20px rgba(100, 100, 150, 0.2),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.button-group h3 {
+  color: #00ff88;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px #00ff88;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Control Buttons (Alpine specific) */
+.control-button {
+  width: 100%;
+  padding: 12px 8px;
+  margin: 8px 0;
+  background: linear-gradient(135deg, #4a4a6a 0%, #3a3a5a 100%);
+  border: 1px solid #6a6a8a;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.control-button:hover {
+  background: linear-gradient(135deg, #5a5a7a 0%, #4a4a6a 100%);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.control-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.control-button.start {
+  background: linear-gradient(135deg, #00aa44 0%, #008833 100%);
+  border-color: #00cc55;
+}
+
+.control-button.start:hover {
+  background: linear-gradient(135deg, #00cc55 0%, #00aa44 100%);
+}
+
+.control-button.stop {
+  background: linear-gradient(135deg, #cc3300 0%, #aa2200 100%);
+  border-color: #ff4422;
+}
+
+.control-button.stop:hover {
+  background: linear-gradient(135deg, #ff4422 0%, #cc3300 100%);
+}
+
+.control-button.disabled {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-color: #3a3a3a;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Residual Jump Slider */
+.residual-container {
+  margin: 15px 0;
+  padding: 10px;
+  background: rgba(20, 20, 40, 0.6);
+  border-radius: 8px;
+  border: 1px solid #4a4a6a;
+}
+
+.residual-label {
+  display: block;
+  color: #00ff88;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.residual-slider {
+  width: 100%;
+  height: 6px;
+  background: #2a2a2a;
+  border-radius: 3px;
+  outline: none;
+  border: 1px solid #4a4a6a;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.residual-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+  border: 2px solid #ffffff;
+}
+
+.residual-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+  border: 2px solid #ffffff;
+}
+
+.residual-slider::-webkit-slider-track {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #2a2a2a 0%, #4a4a6a 100%);
+  border-radius: 3px;
+}
+
+.residual-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #2a2a2a 0%, #4a4a6a 100%);
+  border-radius: 3px;
+  border: none;
+}
+
+.residual-value {
+  color: #00ff88;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 5px;
+  text-shadow: 0 0 5px #00ff88;
+}
+
+/* Alpine Title */
+.alpine-title {
+  position: absolute;
+  top: 40px;
+  left: 45%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 35px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.7);
+  z-index: 20;
+}
+
+/* Crosshair */
+.crosshair {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.05s ease;
+  z-index: 30;
+}
+
+.crosshair::before,
+.crosshair::after {
+  content: '';
+  position: absolute;
+  background: #00ff88;
+  box-shadow: 0 0 10px #00ff88;
+}
+
+.crosshair::before {
+  width: 40px;
+  height: 2px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.crosshair::after {
+  width: 2px;
+  height: 40px;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.center-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ff4444;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #ff4444;
+}
+
+/* Information Displays */
+.coordinates {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: #00ff88;
+  font-size: 16px;
+  text-shadow: 0 0 5px #00ff88;
+  z-index: 20;
+}
+
+.joystick-info {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  color: #8888aa;
+  font-size: 12px;
+  z-index: 20;
+}
+
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: #8888aa;
+  font-size: 12px;
+  z-index: 20;
+}
+
+/* Grid overlay variations */
+.grid.alpine-grid {
+  opacity: 0.1;
+  background-size: 30px 30px;
+}
+
+/* Status Indicator variations */
+.status-indicator {
+  position: absolute;
+  top: 20px;
+  right: 110px;
+  width: 12px;
+  height: 12px;
+  background: #ff4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ff4444;
+  z-index: 20;
+}
+
+.status-indicator.connected {
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+}
+
+/* Winches (Arganelli rossi) */
+.winch {
+  position: absolute;
+  width: 40px;
+  height: 25px;
+  background: #ff3333;
+  border: 2px solid #ff6666;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+  top: 60px;
+  z-index: 20;
+}
+
+.winch-left {
+  left: 80px;
+}
+
+.winch-right {
+  right: 80px;
+}
+
+.winch::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ffaaaa;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Robot triangolare viola */
+.robot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid #8833ff;
+  filter: drop-shadow(0 0 8px rgba(136, 51, 255, 0.6));
+  z-index: 20;
+}
+
+.robot::before {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 25px;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 10px solid #aa66ff;
+}
+
+/* Dashed Lines */
+.dashed-line {
+  position: absolute;
+  border-top: 2px dashed #66aaff;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 3px rgba(102, 170, 255, 0.3));
+  transform-origin: left center;
+  z-index: 10;
+}
+
+/* Crosshair Lines */
+.crosshair-line {
+  position: absolute;
+  border-top: 2px dashed #55ccff;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 3px rgba(85, 204, 255, 0.5));
+  transform-origin: left center;
+  z-index: 15;
+}
+
+/* Distance Vector */
+.distance-vector {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, #ffaa00, #ff6600);
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.8);
+  transform-origin: left center;
+  opacity: 0.9;
+  transition: all 0.05s ease;
+  z-index: 25;
+}
+
+.distance-vector::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid #ff6600;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  filter: drop-shadow(0 0 4px rgba(255, 102, 0, 0.6));
+}
+
+.distance-label {
+  position: absolute;
+  color: #ffaa00;
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 0 0 4px rgba(255, 170, 0, 0.8);
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  backdrop-filter: blur(5px);
+  transition: all 0.05s ease;
+  z-index: 25;
+}
+
+/* Jump Indicator */
+.jump-indicator {
+  position: absolute;
+  top: 90px;
+  right: 160px;
+  width: 80px;
+  height: 30px;
+  background: rgba(255, 0, 0, 0.3);
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4444;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  opacity: 0.3;
+  transition: all 0.2s ease;
+  z-index: 20;
+}
+
+.jump-indicator.active {
+  background: rgba(255, 0, 0, 0.8);
+  opacity: 1;
+  box-shadow: 0 0 15px rgba(255, 68, 68, 0.8);
+  transform: scale(1.1);
+}
