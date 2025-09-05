@@ -11,18 +11,18 @@ def init_temperature_handler(socketio: SocketIO):
     def handle_register(data):
         node = data.get('node', 'unknown')
         clients[request.sid] = node
-        log.info(f"📥 Nodo registrato: {node} (sid: {request.sid})")
+        log.info(f"Nodo registrato: {node} (sid: {request.sid})")
 
     @socketio.on('disconnect')
     def handle_disconnect():
         node = clients.pop(request.sid, 'unknown')
-        log.info(f"❌ Disconnessione nodo: {node} (sid: {request.sid})")
+        log.info(f"Disconnessione nodo: {node} (sid: {request.sid})")
 
 
     @socketio.on('temperature')
     def handle_temperature(value):
         node = clients.get(request.sid, 'unknown')
-        log.info(f"🌡️ Ricevuto da {node}: {value} °C")
+        log.info(f"Ricevuto da {node}: {value} °C")
         socketio.emit('temperature', value, broadcast=True)
 
     @socketio.on('voltage_data')

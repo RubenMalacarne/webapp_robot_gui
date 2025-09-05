@@ -14,7 +14,6 @@
     <div class="main-wrapper">
         <div class="alpine-title">Alpine robot</div>
 
-        <div class="jump-indicator" id="jumpIndicator">JUMP</div>
         <div class="container alpine-container" id="container">
             <div class="grid alpine-grid"></div>
             
@@ -45,10 +44,6 @@
             </div>
             <div class="controls">
                 joystick control<br>
-                Topic: /joy <br>
-                Axis 0 (X): Move crosshair horizontally<br>
-                Axis 1 (Y): Move crosshair vertically<br>
-                Button 0: Jump<br>
                 🔴 Winches | 🔷 Robot | ⊹ Crosshair | → Vector<br>
             </div>
             <div class="status-indicator" id="status"></div>
@@ -59,11 +54,7 @@
             <!-- Primo gruppo: Controlli principali -->
             <div class="button-group">
                 <h3>Main Controls</h3>
-                <div class="residual-container">
-                    <label for="residualSlider" class="residual-label">Residual Jump</label>
-                    <input type="range" id="residualSlider" class="residual-slider" min="0" max="100" value="0">
-                    <div class="residual-value" id="residualValue">0</div>
-                </div>
+                <div id="jumpIndicator" class="jump-indicator">JUMP</div>
                 <button class="control-button" id="calibration">Calibration</button>
                 <button class="control-button" id="initialization">Initialization</button>
                 <button class="control-button start" id="startStop">Start</button>
@@ -81,7 +72,7 @@
     </div>
     
 
-  <script src="{{ url_for('static', filename='js/alpine.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/script_alpine.js') }}"></script>
  
 </body>
 </html>

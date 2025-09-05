@@ -6,8 +6,7 @@ import logging
 import eventlet
 eventlet.monkey_patch()   
 
-
-from .handler_data import init_temperature_handler
+from .handler_alpine import init_button_handler
 
 app = Flask(__name__)
 bp = Blueprint('main', __name__)
@@ -20,11 +19,11 @@ log = logging.getLogger(__name__)
 socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode="eventlet",
-    logger=True,
+    logger=False,  # Disabilita i log dettagliati di SocketIO
     engineio_logger=False
 )
 
-init_temperature_handler(socketio)
+init_button_handler(socketio)
 
 
 @bp.route('/')

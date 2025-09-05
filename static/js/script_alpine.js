@@ -12,22 +12,84 @@
         const distanceLabel   = document.getElementById('distanceLabel');
         const jumpIndicator   = document.getElementById('jumpIndicator');
         
+        // Inizializza Socket.IO
+        const socket = io();
+        
+        // Registra questo client
+        socket.emit('register', { node: 'alpine_gui' });
+        
+        // Listener jump indicator
+        socket.on('jump_indicator', (data) => {
+            const isJumping = data.jumping || false;
+            
+            if (isJumping) {
+                // Attiva l'indicatore jump
+                jumpIndicator.classList.add('active');
+                console.log('🦘 Jump indicator ATTIVATO!');
+                
+            } else {
+                // Disattiva l'indicatore jump
+                jumpIndicator.classList.remove('active');
+                console.log('🦘 Jump indicator disattivato');
+            }
+        });
+
+        // Listener per feedback dai pulsanti (opzionale)
+        socket.on('button_start_stop', (data) => {
+            console.log('Feedback Start/Stop:', data);
+        });
+        
+        socket.on('button_calibration', (data) => {
+            console.log('Feedback Calibration:', data);
+        });
+        
+        socket.on('button_initialization', (data) => {
+            console.log('Feedback Initialization:', data);
+        });
+
+        
+        // Listener per ricevere comandi robot da ROS2 tramite Socket.IO
+        socket.on('robot_cmd', (data) => {
+            const throttle = data.throttle || 0.0;
+            const yaw = data.yaw || 0.0;
+            
+            // Converte throttle e yaw in coordinate per il crosshair
+            // Assumendo che throttle sia l'asse Y e yaw sia l'asse X
+            const crosshairX = yaw * joystickRange;        // Yaw -> movimento orizzontale
+            const crosshairY = -throttle * joystickRange;  // Throttle -> movimento verticale (invertito)
+            
+            // Aggiorna lo stato corrente
+            currentState = { 
+                x: crosshairX, 
+                y: crosshairY, 
+                robot_x: 0,
+                robot_y: 0,
+                throttle: throttle,
+                yaw: yaw
+            };
+
+            // Aggiorna la UI
+            coordinates.textContent = `X: ${Math.round(crosshairX)}, Y: ${Math.round(crosshairY)}`;
+            joystickInfo.innerHTML = `Throttle: ${throttle.toFixed(3)}<br>Yaw: ${yaw.toFixed(3)}`;
+            
+            // Aggiorna la geometria
+            updateGeometry(crosshairX, crosshairY, currentState.robot_x, currentState.robot_y);
+            
+            // Aggiorna indicatore di connessione
+            const now = Date.now();
+            statusIndicator.classList.toggle('connected', now - lastUpdate < 2000);
+            lastUpdate = now;
+        });
+        
         /* ---------- CONFIG ---------- */
-        const STORE_NAME = 'joy';  // Cambiato da 'crosshair' a 'joy' per leggere i dati del joystick
-        const STATE_URL  = `/state/${STORE_NAME}`;
-        const UPDATE_URL = `/update/${STORE_NAME}`;
+        // Configurazione Socket.IO per joystick
         let lastUpdate = Date.now();
         let currentState = { x: 0, y: 0, robot_x: 0, robot_y: 0 };
-        
-        // Joystick configuration
-        const joystickRange = 150; // Range di movimento del crosshair in pixel (fisso)
+        const joystickRange = 150; // Range di movimento del crosshair in pixel
 
         // Controllo pulsanti
         let isStarted = false;
         const startStopBtn = document.getElementById('startStop');
-        const residualSlider = document.getElementById('residualSlider');
-        const residualValue = document.getElementById('residualValue');
-        
         // Pulsanti test che si alternano (solo uno attivo alla volta)
         const testButtons = [
             document.getElementById('testSingleJump'),
@@ -36,7 +98,8 @@
             document.getElementById('optiJump')
         ];
         let activeTestButton = null;
-
+        
+        // update gui robot state
         function updateGeometry(crosshairX, crosshairY, robotX, robotY) {
             const containerRect = container.getBoundingClientRect();
             const containerWidth = containerRect.width;
@@ -106,73 +169,22 @@
             line.style.transform = `rotate(${angle}deg)`;
         }
         
-        /* ---------- POLLING ---------- */
-        async function pollState() {
-            while (true) {
-                try {
-                    const res  = await fetch(STATE_URL);
-                    const data = await res.json();
+        /* ---------- POLLING SOSTITUITO CON SOCKET.IO ---------- */
+        // Polling rimosso - ora i dati joystick arrivano tramite Socket.IO
+        // async function pollState() { ... }
+        
+        /* ---------- INIT & RESIZE ---------- */
+        window.addEventListener('load', () => {
+            // Prima di ricevere dati reali, si parte con (0,0)
+            updateGeometry(0, 0, 0, 0);
+        });
 
-                    const axes = Array.isArray(data.axes) ? data.axes : [];
-                    const buttons = Array.isArray(data.buttons) ? data.buttons : [];
-
-                    // Leggi gli assi del joystick (axis 0 = X, axis 1 = Y)
-                    const axis0 = axes[0] ?? 0; // X axis
-                    const axis1 = axes[1] ?? 0; // Y axis
-                    
-                    // Converte i valori degli assi (-1 a +1) in coordinate pixel
-                    const crosshairX = axis0 * joystickRange;
-                    const crosshairY = axis1 * joystickRange;
-                    
-                    // Gestione del bottone 0 per il jump
-                    const button0 = buttons[0] ?? 0;
-                    
-                    // Aggiorna l'indicatore del jump
-                    jumpIndicator.classList.toggle('active', button0 === 1);
-                    
-                    if (button0 === 1) {
-                        console.log('Jump button pressed!');
-                        // Qui puoi aggiungere la logica per il jump
-                    }
-
-                    // Aggiorna lo stato corrente
-                    currentState = { 
-                        x: crosshairX, 
-                        y: crosshairY, 
-                        robot_x: 0, // Il JOY_STATE non ha robot_x/robot_y, li impostiamo a 0
-                        robot_y: 0,
-                        axis0: axis0,
-                        axis1: axis1,
-                        button0: button0
-                    };
-
-                    coordinates.textContent =
-                        `X: ${Math.round(crosshairX)}, Y: ${Math.round(crosshairY)}`;
-
-                    joystickInfo.innerHTML =
-                        `Axis 0: ${axis0.toFixed(3)}<br>Axis 1: ${axis1.toFixed(3)}<br>Button 0: ${button0}`;
-
-                    updateGeometry(crosshairX, crosshairY, currentState.robot_x, currentState.robot_y);
-
-                    const now = Date.now();
-                    statusIndicator.classList.toggle('connected', now - lastUpdate < 1000);
-                    lastUpdate = now;
-                } catch (e) {
-                    console.error('Errore connessione:', e);
-                    statusIndicator.classList.remove('connected');
-                }
-
-                await new Promise(r => setTimeout(r, 50)); // 20 fps circa
-            }
-        }
+        window.addEventListener('resize', () => {
+            // Ricostruisce le linee se la finestra cambia
+            updateGeometry(currentState.x, currentState.y, currentState.robot_x, currentState.robot_y);
+        });
 
         /* ---------- BUTTON HANDLERS ---------- */
-        // Residual Jump Slider
-        residualSlider.addEventListener('input', function() {
-            residualValue.textContent = this.value;
-            console.log(`Residual Jump: ${this.value}`);
-        });
-        
         // Start/Stop toggle button
         startStopBtn.addEventListener('click', function() {
             isStarted = !isStarted;
@@ -185,17 +197,21 @@
                 this.className = 'control-button start';
                 console.log('Sistema fermato');
             }
+            // Invia stato tramite Socket.IO
+            socket.emit('button_start_stop', { is_started: isStarted });
         });
 
         // Main control buttons
         document.getElementById('calibration').addEventListener('click', function() {
             console.log('Calibration avviata');
-            // Qui aggiungi la logica per calibration
+            // Invia comando tramite Socket.IO
+            socket.emit('button_calibration', { triggered: true });
         });
 
         document.getElementById('initialization').addEventListener('click', function() {
             console.log('Initialization avviata');
-            // Qui aggiungi la logica per initialization
+            // Invia comando tramite Socket.IO
+            socket.emit('button_initialization', { triggered: true });
         });
 
         // Test buttons che si alternano (solo uno attivo alla volta)
@@ -208,6 +224,12 @@
                     activeTestButton.classList.remove('disabled');
                     activeTestButton.style.pointerEvents = 'auto';
                     activeTestButton.style.opacity = '1';
+                    
+                    // Disattiva il pulsante precedente tramite Socket.IO
+                    const prevButtonEvent = getButtonEventName(activeTestButton.id);
+                    if (prevButtonEvent) {
+                        socket.emit(prevButtonEvent, { is_active: false });
+                    }
                 }
                 
                 // Disabilita il pulsante corrente
@@ -217,6 +239,12 @@
                 
                 // Imposta come pulsante attivo
                 activeTestButton = this;
+                
+                // Invia attivazione tramite Socket.IO
+                const buttonEvent = getButtonEventName(this.id);
+                if (buttonEvent) {
+                    socket.emit(buttonEvent, { is_active: true });
+                }
                 
                 // Qui aggiungi la logica specifica per ogni test
                 switch(this.id) {
@@ -236,14 +264,13 @@
             });
         });
         
-        /* ---------- INIT & RESIZE ---------- */
-        window.addEventListener('load', () => {
-            // Prima di ricevere dati reali, si parte con (0,0)
-            updateGeometry(0, 0, 0, 0);
-            pollState();                   // avvia il loop una sola volta
-        });
-
-        window.addEventListener('resize', () => {
-            // Ricostruisce le linee se la finestra cambia
-            updateGeometry(currentState.x, currentState.y, currentState.robot_x, currentState.robot_y);
-        });
+        // Funzione helper per mappare gli ID dei pulsanti agli eventi Socket.IO
+        function getButtonEventName(buttonId) {
+            const eventMap = {
+                'testSingleJump': 'button_test_single_jump',
+                'testMultiJump': 'button_test_multi_jump',
+                'discreteJump': 'button_discrete_jump',
+                'optiJump': 'button_opti_jump'
+            };
+            return eventMap[buttonId];
+        }
