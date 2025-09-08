@@ -12,6 +12,10 @@ class AlpineDataSender(Node):
     def __init__(self):
         super().__init__('alpine_data_sender')
 
+        # Gestione salti rimanenti (inizializza prima di tutto)
+        self.total_jumps = 10
+        self.remaining_jumps = 10
+
         # Configurazione Socket.IO (client)
         self.sio = socketio.Client()
         
@@ -34,6 +38,8 @@ class AlpineDataSender(Node):
             self.get_logger().info("🌐 Connesso a Socket.IO")
             # Registra questo nodo
             self.sio.emit('register', {'node': self.get_name()})
+            # Invia lo stato iniziale dei salti
+            self.send_jumps_remaining()
         except Exception as e:
             self.get_logger().error(f"❌ Impossibile connettersi a Socket.IO: {e}")
             raise
@@ -94,6 +100,12 @@ class AlpineDataSender(Node):
             self.sio.emit('jump_indicator', {'jumping': self.is_jumping})
             self.get_logger().info("🦘 Jump indicator inviato alla web app!")
             
+            # Se si sta attivando un salto, decrementa i salti rimanenti
+            if self.is_jumping and self.remaining_jumps > 0:
+                self.minus_one_jump()  # Usa il metodo minus_one_jump invece
+            elif self.is_jumping and self.remaining_jumps <= 0:
+                self.get_logger().warn("Tentativo di salto ma nessun salto rimanente!")
+            
         else:
             self.get_logger().warn("Non connesso a Socket.IO, impossibile inviare jump indicator")
     
@@ -135,6 +147,8 @@ class AlpineDataSender(Node):
                 self.button_states['initialization'] = True
                 self.get_logger().info("🚀 Initialization richiesta!")
                 self.handle_initialization()
+                # Reset dei salti all'inizializzazione
+                self.reset_jumps()
                 
         @self.sio.on('button_test_single_jump')
         def on_test_single_jump(data):
@@ -142,6 +156,8 @@ class AlpineDataSender(Node):
             if self.button_states['test_single_jump']:
                 self.get_logger().info("🦘 Test Single Jump attivato")
                 self.reset_other_test_modes('test_single_jump')
+                # Decrementa i salti quando viene attivato Single Jump
+                self.minus_one_jump()
                 
         @self.sio.on('button_test_multi_jump')
         def on_test_multi_jump(data):
@@ -149,6 +165,8 @@ class AlpineDataSender(Node):
             if self.button_states['test_multi_jump']:
                 self.get_logger().info("🦘🦘 Test Multi Jump attivato")
                 self.reset_other_test_modes('test_multi_jump')
+                # Decrementa i salti quando viene attivato Multi Jump
+                self.minus_one_jump()
                 
         @self.sio.on('button_discrete_jump')
         def on_discrete_jump(data):
@@ -156,6 +174,8 @@ class AlpineDataSender(Node):
             if self.button_states['discrete_jump']:
                 self.get_logger().info("📐 Discrete Jump attivato")
                 self.reset_other_test_modes('discrete_jump')
+                # Decrementa i salti quando viene attivato Discrete Jump
+                self.minus_one_jump()
                 
         @self.sio.on('button_opti_jump')
         def on_opti_jump(data):
@@ -163,6 +183,8 @@ class AlpineDataSender(Node):
             if self.button_states['opti_jump']:
                 self.get_logger().info("⚡ Opti Jump attivato")
                 self.reset_other_test_modes('opti_jump')
+                # Decrementa i salti quando viene attivato Opti Jump
+                self.minus_one_jump()
         
         # Listener opzionale per joystick_data (se serve supportare anche questo formato)
         @self.sio.on('joystick_data')
@@ -186,7 +208,6 @@ class AlpineDataSender(Node):
     def handle_initialization(self):
         """Gestisce la logica di inizializzazione"""
         self.get_logger().info("Eseguendo inizializzazione...")
-        self.trigger_jump_indicator()
         # Qui aggiungi la tua logica di inizializzazione
         
     def get_current_state(self):
@@ -209,20 +230,54 @@ class AlpineDataSender(Node):
         """Esegue il salto basato sul modo selezionato"""
         if mode == 'test_single_jump':
             self.get_logger().info("Executing single jump")
+            self.minus_one_jump()  # Decrementa salti
             # Logica per single jump
             
         elif mode == 'test_multi_jump':
             self.get_logger().info("Executing multi jump")
+            self.minus_one_jump()  # Decrementa salti
             # Logica per multi jump
             
         elif mode == 'discrete_jump':
             self.get_logger().info("Executing discrete jump")
+            self.minus_one_jump()  # Decrementa salti
             # Logica per discrete jump
             
         elif mode == 'opti_jump':
             self.get_logger().info("Executing optimized jump")
+            self.minus_one_jump()  # Decrementa salti
             # Logica per optimized jump
     
+    def send_jumps_remaining(self):
+        if self.sio.connected:
+            self.sio.emit('jumps_remaining', {
+                'total': self.total_jumps,
+                'remaining': self.remaining_jumps
+            })
+            self.get_logger().info(f"Salti rimanenti inviati: {self.remaining_jumps}/{self.total_jumps}")
+        else:
+            self.get_logger().warn("Non connesso a Socket.IO, impossibile inviare dati salti")
+    
+    def reset_jumps(self):
+        self.remaining_jumps = self.total_jumps
+        self.send_jumps_remaining()
+        self.get_logger().info(f"Salti resettati: {self.remaining_jumps}/{self.total_jumps}")
+    
+    def set_total_jumps(self, total):
+        self.total_jumps = total
+        self.remaining_jumps = min(self.remaining_jumps, self.total_jumps)
+        self.send_jumps_remaining()
+        self.get_logger().info(f"Salti totali impostati: {self.total_jumps}")
+    
+    def minus_one_jump(self):
+        if self.remaining_jumps > 0:
+            self.remaining_jumps -= 1
+            self.send_jumps_remaining()
+            self.get_logger().info(f"Salto decrementato: {self.remaining_jumps}/{self.total_jumps}")
+        else:
+            self.get_logger().warn("Nessun salto rimanente - impossibile decrementare ulteriormente")
+            
+            
     def destroy_node(self):
         """Cleanup quando il nodo viene distrutto"""
         self.get_logger().info("🔌 Disconnettendo da Socket.IO...")

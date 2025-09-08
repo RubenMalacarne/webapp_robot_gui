@@ -87,4 +87,16 @@ def init_button_handler(socketio: SocketIO):
         log.info(f"Jump indicator da {node}: {'JUMPING' if is_jumping else 'not jumping'}")
         socketio.emit('jump_indicator', {
             'jumping': is_jumping
+        }, broadcast=True)
+
+    # Gestione salti rimanenti
+    @socketio.on('jumps_remaining')
+    def handle_jumps_remaining(data):
+        node = clients.get(request.sid, 'unknown')
+        total = data.get('total', 10)
+        remaining = data.get('remaining', 10)
+        log.info(f"Salti rimanenti da {node}: {remaining}/{total}")
+        socketio.emit('jumps_remaining', {
+            'total': total,
+            'remaining': remaining
         }, broadcast=True) 

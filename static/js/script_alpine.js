@@ -11,6 +11,8 @@
         const distanceVector  = document.getElementById('distanceVector');
         const distanceLabel   = document.getElementById('distanceLabel');
         const jumpIndicator   = document.getElementById('jumpIndicator');
+        const jumpsRemainingFill = document.getElementById('jumpsRemainingFill');
+        const jumpsRemainingText = document.getElementById('jumpsRemainingText');
         
         // Inizializza Socket.IO
         const socket = io();
@@ -32,6 +34,31 @@
                 jumpIndicator.classList.remove('active');
                 console.log('🦘 Jump indicator disattivato');
             }
+        });
+
+        // Listener per i salti rimanenti
+        socket.on('jumps_remaining', (data) => {
+            const totalJumps = data.total || 10;
+            const remainingJumps = data.remaining || 10;
+            const percentage = (remainingJumps / totalJumps) * 100;
+            
+            // Aggiorna il testo
+            jumpsRemainingText.textContent = `${remainingJumps}/${totalJumps}`;
+            
+            // Aggiorna la larghezza della barra
+            jumpsRemainingFill.style.width = `${percentage}%`;
+            
+            // Rimuovi tutte le classi di stato
+            jumpsRemainingFill.classList.remove('low', 'critical');
+            
+            // Aggiungi classe appropriata in base alla percentuale
+            if (percentage <= 20) {
+                jumpsRemainingFill.classList.add('critical');
+            } else if (percentage <= 50) {
+                jumpsRemainingFill.classList.add('low');
+            }
+            
+            console.log(`Salti rimanenti: ${remainingJumps}/${totalJumps} (${percentage.toFixed(1)}%)`);
         });
 
         // Listener per feedback dai pulsanti (opzionale)
