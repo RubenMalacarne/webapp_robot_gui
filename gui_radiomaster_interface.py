@@ -38,7 +38,6 @@ class JoyListener(Node):
 
         os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
 
-        
         self.joy_state = {
             "axes": [0.0] * NUM_AXES,
             "buttons": [0]  * NUM_BTNS,

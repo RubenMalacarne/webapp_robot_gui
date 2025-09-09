@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Point Cloud Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #1a1a1a;
+      font-family: 'Consolas', monospace;
+      color: #ccc;
+      overflow: hidden;
+    }
+
+    .grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.05;
+      background-image: 
+          linear-gradient(rgba(100, 100, 150, 0.3) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100, 100, 150, 0.3) 1px, transparent 1px);
+      background-size: 50px 50px;
+      z-index: -1;
+    }
+
+    .main-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      gap: 2px;
+    }
+
+    .viewer-section {
+      width: 70%;
+      height: 100%;
+      background: rgba(30, 30, 45, 0.9);
+      border: 2px solid #4a4a6a;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .controls-section {
+      width: 30%;
+      height: 100%;
+      background: rgba(40, 40, 60, 0.9);
+      border: 2px solid #4a4a6a;
+      border-radius: 15px;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(100, 100, 200, 0.3);
+    }
+
+    .viewer-header {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid #555;
+    }
+
+    .viewer-title {
+      font-size: 18px;
+      color: #00ff88;
+      margin: 0;
+    }
+
+    .viewer-info {
+      font-size: 12px;
+      color: #aaa;
+      margin: 5px 0 0 0;
+    }
+
+    .control-group {
+      background: rgba(30, 30, 45, 0.8);
+      border: 1px solid #555;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(100, 100, 200, 0.2);
+    }
+
+    .control-title {
+      font-size: 16px;
+      color: #00ff88;
+      margin-bottom: 15px;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 8px;
+    }
+
+    .control-item {
+      margin-bottom: 15px;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 5px;
+    }
+
+    .control-input {
+      width: 100%;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid #555;
+      border-radius: 5px;
+      padding: 8px 12px;
+      color: #00ff88;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+    }
+
+    .control-input:focus {
+      outline: none;
+      border-color: #00ff88;
+      box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+    }
+
+    .control-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(20, 20, 30, 0.8);
+      outline: none;
+      border: 1px solid #555;
+    }
+
+    .control-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00ff88;
+      cursor: pointer;
+      border: 2px solid #004f33;
+      box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    }
+
+    .control-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00ff88;
+      cursor: pointer;
+      border: 2px solid #004f33;
+      box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    }
+
+    .value-display {
+      display: inline-block;
+      background: rgba(0, 255, 136, 0.1);
+      color: #00ff88;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      margin-left: 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .button {
+      background: linear-gradient(135deg, #004f33, #00ff88);
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+      margin: 5px 5px 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 255, 136, 0.4);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .status-bar {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+      right: 20px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-item {
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .status-value {
+      color: #00ff88;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff4444;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.connected {
+      background: #00ff88;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .color-preset {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      margin: 2px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .color-preset:hover {
+      border-color: #00ff88;
+      transform: scale(1.1);
+    }
+
+    .color-preset.active {
+      border-color: #00ff88;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    #three-container {
+      width: 100%;
+      height: 100%;
+      border-radius: 13px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  
+  <div class="main-container">
+    <!-- Sezione Viewer 3D (Sinistra) -->
+    <div class="viewer-section">
+      <div class="viewer-header">
+        <h3 class="viewer-title">Point Cloud 3D Viewer</h3>
+        <p class="viewer-info">Use mouse to rotate • Wheel to zoom • Right-click to pan</p>
+      </div>
+      
+      <div id="three-container"></div>
+      
+      <div class="status-bar">
+        <div class="status-item">
+          Points: <span class="status-value" id="point-count">0</span>
+        </div>
+        <div class="status-item">
+          FPS: <span class="status-value" id="fps-counter">60</span>
+        </div>
+        <div class="status-item">
+          Memory: <span class="status-value" id="memory-usage">0 MB</span>
+        </div>
+        <div class="connection-status">
+          <span class="status-item">Socket.IO:</span>
+          <div class="status-dot" id="connection-dot"></div>
+          <span class="status-value" id="connection-status">Disconnected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sezione Controlli (Destra) -->
+    <div class="controls-section">
+      <!-- Controlli Point Cloud -->
+      <div class="control-group">
+        <div class="control-title">Point Cloud Settings</div>
+        
+        <div class="control-item">
+          <label class="control-label">Point Density</label>
+          <input type="range" class="control-slider" id="density-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+          <span class="value-display" id="density-value">1.0</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Point Size</label>
+          <input type="range" class="control-slider" id="size-slider" min="0.5" max="10.0" step="0.5" value="2.0">
+          <span class="value-display" id="size-value">2.0</span>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Opacity</label>
+          <input type="range" class="control-slider" id="opacity-slider" min="0.1" max="1.0" step="0.1" value="0.8">
+          <span class="value-display" id="opacity-value">0.8</span>
+        </div>
+      </div>
+
+      <!-- Controlli Colore -->
+      <div class="control-group">
+        <div class="control-title">Color & Appearance</div>
+        
+        <div class="control-item">
+          <label class="control-label">Color Mode</label>
+          <select class="control-input" id="color-mode">
+            <option value="height">Height-based</option>
+            <option value="intensity">Intensity</option>
+            <option value="uniform">Uniform Color</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Color Presets</label>
+          <div>
+            <div class="color-preset active" style="background: #00ff88;" data-color="#00ff88"></div>
+            <div class="color-preset" style="background: #ff6600;" data-color="#ff6600"></div>
+            <div class="color-preset" style="background: #0066ff;" data-color="#0066ff"></div>
+            <div class="color-preset" style="background: #ff0066;" data-color="#ff0066"></div>
+            <div class="color-preset" style="background: #ffcc00;" data-color="#ffcc00"></div>
+            <div class="color-preset" style="background: #cc00ff;" data-color="#cc00ff"></div>
+          </div>
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Custom Color</label>
+          <input type="color" class="control-input" id="custom-color" value="#00ff88">
+        </div>
+      </div>
+
+      <!-- Controlli Filtri -->
+      <div class="control-group">
+        <div class="control-title">Filters & Processing</div>
+        
+        <div class="control-item">
+          <label class="control-label">Min Distance (m)</label>
+          <input type="number" class="control-input" id="min-distance" value="0.1" step="0.1" min="0">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Max Distance (m)</label>
+          <input type="number" class="control-input" id="max-distance" value="100" step="1" min="1">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Height Filter (m)</label>
+          <input type="range" class="control-slider" id="height-filter" min="-10" max="10" step="0.5" value="0">
+          <span class="value-display" id="height-value">0</span>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="apply-filters">Apply Filters</button>
+          <button class="button" id="reset-filters">Reset</button>
+        </div>
+      </div>
+
+      <!-- Controlli Socket.IO -->
+      <div class="control-group">
+        <div class="control-title">Connection Settings</div>
+        
+        <div class="control-item">
+          <label class="control-label">Server URL</label>
+          <input type="text" class="control-input" id="server-url" value="http://localhost:3000" placeholder="http://localhost:3000">
+        </div>
+        
+        <div class="control-item">
+          <label class="control-label">Update Rate (Hz)</label>
+          <input type="range" class="control-slider" id="update-rate" min="1" max="60" step="1" value="30">
+          <span class="value-display" id="rate-value">30</span>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="connect-btn">Connect</button>
+          <button class="button" id="disconnect-btn">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Controlli Esportazione -->
+      <div class="control-group">
+        <div class="control-title">Export & Tools</div>
+        
+        <div class="control-item">
+          <button class="button" id="clear-points">Clear Points</button>
+          <button class="button" id="generate-sample">Generate Sample</button>
+        </div>
+        
+        <div class="control-item">
+          <button class="button" id="save-screenshot">Screenshot</button>
+          <button class="button" id="reset-camera">Reset Camera</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Three.js setup
+    let scene, camera, renderer, pointCloud, controls;
+    let socket = null;
+    let isConnected = false;
+    let pointsData = [];
+    let animationId;
+    
+    // Initialize Three.js
+    function initThree() {
+      const container = document.getElementById('three-container');
+      
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0f);
+      
+      // Camera
+      camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(10, 10, 10);
+      camera.lookAt(0, 0, 0);
+      
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+      
+      // Simple orbit controls (manual implementation since OrbitControls not available)
+      setupControls();
+      
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 10, 5);
+      scene.add(directionalLight);
+      
+      // Grid helper
+      const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+      scene.add(gridHelper);
+      
+      // Axes helper
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+      
+      // Start render loop
+      animate();
+      
+      // Handle window resize
+      window.addEventListener('resize', onWindowResize);
+    }
+    
+    // Simple manual orbit controls
+    function setupControls() {
+      let isMouseDown = false;
+      let mouseX = 0, mouseY = 0;
+      let targetX = 0, targetY = 0;
+      let windowHalfX = window.innerWidth / 2;
+      let windowHalfY = window.innerHeight / 2;
+      
+      const container = document.getElementById('three-container');
+      
+      container.addEventListener('mousedown', (event) => {
+        isMouseDown = true;
+        mouseX = event.clientX - windowHalfX;
+        mouseY = event.clientY - windowHalfY;
+      });
+      
+      container.addEventListener('mouseup', () => {
+        isMouseDown = false;
+      });
+      
+      container.addEventListener('mousemove', (event) => {
+        if (isMouseDown) {
+          targetX = (event.clientX - windowHalfX - mouseX) * 0.005;
+          targetY = (event.clientY - windowHalfY - mouseY) * 0.005;
+          
+          // Rotate camera around the origin
+          const radius = camera.position.length();
+          camera.position.x = radius * Math.sin(targetX) * Math.cos(targetY);
+          camera.position.z = radius * Math.cos(targetX) * Math.cos(targetY);
+          camera.position.y = radius * Math.sin(targetY);
+          camera.lookAt(0, 0, 0);
+        }
+      });
+      
+      container.addEventListener('wheel', (event) => {
+        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        camera.position.multiplyScalar(scale);
+        event.preventDefault();
+      });
+    }
+    
+    function onWindowResize() {
+      const container = document.getElementById('three-container');
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+    
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+      updateFPS();
+    }
+    
+    // Create or update point cloud
+    function updatePointCloud() {
+      if (pointCloud) {
+        scene.remove(pointCloud);
+      }
+      
+      if (pointsData.length === 0) return;
+      
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(pointsData.length * 3);
+      const colors = new Float32Array(pointsData.length * 3);
+      
+      const density = parseFloat(document.getElementById('density-slider').value);
+      const colorMode = document.getElementById('color-mode').value;
+      const customColor = new THREE.Color(document.getElementById('custom-color').value);
+      
+      let visiblePoints = 0;
+      for (let i = 0; i < pointsData.length; i++) {
+        if (Math.random() > density) continue;
+        
+        const point = pointsData[i];
+        positions[visiblePoints * 3] = point.x;
+        positions[visiblePoints * 3 + 1] = point.y;
+        positions[visiblePoints * 3 + 2] = point.z;
+        
+        // Color based on mode
+        let color = customColor;
+        if (colorMode === 'height') {
+          const hue = (point.y + 10) / 20; // Normalize height to 0-1
+          color = new THREE.Color().setHSL(hue * 240 / 360, 1, 0.5);
+        } else if (colorMode === 'intensity') {
+          const intensity = point.intensity || 0.5;
+          color = new THREE.Color().setHSL(0, 0, intensity);
+        } else if (colorMode === 'random') {
+          color = new THREE.Color().setHSL(Math.random(), 1, 0.5);
+        }
+        
+        colors[visiblePoints * 3] = color.r;
+        colors[visiblePoints * 3 + 1] = color.g;
+        colors[visiblePoints * 3 + 2] = color.b;
+        
+        visiblePoints++;
+      }
+      
+      // Trim arrays to actual size
+      const trimmedPositions = positions.slice(0, visiblePoints * 3);
+      const trimmedColors = colors.slice(0, visiblePoints * 3);
+      
+      geometry.setAttribute('position', new THREE.BufferAttribute(trimmedPositions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(trimmedColors, 3));
+      
+      const material = new THREE.PointsMaterial({
+        size: parseFloat(document.getElementById('size-slider').value),
+        vertexColors: true,
+        opacity: parseFloat(document.getElementById('opacity-slider').value),
+        transparent: true,
+        sizeAttenuation: false
+      });
+      
+      pointCloud = new THREE.Points(geometry, material);
+      scene.add(pointCloud);
+      
+      document.getElementById('point-count').textContent = visiblePoints;
+    }
+    
+    // Generate sample data
+    function generateSampleData() {
+      pointsData = [];
+      const numPoints = 5000;
+      
+      for (let i = 0; i < numPoints; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const radius = 5 + Math.random() * 10;
+        
+        pointsData.push({
+          x: radius * Math.sin(phi) * Math.cos(theta) + (Math.random() - 0.5) * 2,
+          y: radius * Math.cos(phi) + (Math.random() - 0.5) * 2,
+          z: radius * Math.sin(phi) * Math.sin(theta) + (Math.random() - 0.5) * 2,
+          intensity: Math.random()
+        });
+      }
+      
+      updatePointCloud();
+    }
+    
+    // Socket.IO functions
+    function connectSocket() {
+      const serverUrl = document.getElementById('server-url').value;
+      
+      try {
+        socket = io(serverUrl);
+        
+        socket.on('connect', () => {
+          isConnected = true;
+          document.getElementById('connection-status').textContent = 'Connected';
+          document.getElementById('connection-dot').classList.add('connected');
+          console.log('Connected to server');
+        });
+        
+        socket.on('disconnect', () => {
+          isConnected = false;
+          document.getElementById('connection-status').textContent = 'Disconnected';
+          document.getElementById('connection-dot').classList.remove('connected');
+          console.log('Disconnected from server');
+        });
+        
+        socket.on('pointcloud_data', (data) => {
+          if (data && data.points) {
+            pointsData = data.points;
+            updatePointCloud();
+          }
+        });
+        
+        socket.on('connect_error', (error) => {
+          console.error('Connection error:', error);
+          document.getElementById('connection-status').textContent = 'Error';
+        });
+        
+      } catch (error) {
+        console.error('Failed to connect:', error);
+        document.getElementById('connection-status').textContent = 'Error';
+      }
+    }
+    
+    function disconnectSocket() {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+      isConnected = false;
+      document.getElementById('connection-status').textContent = 'Disconnected';
+      document.getElementById('connection-dot').classList.remove('connected');
+    }
+    
+    // FPS counter
+    let lastTime = performance.now();
+    let frameCount = 0;
+    
+    function updateFPS() {
+      frameCount++;
+      const currentTime = performance.now();
+      
+      if (currentTime - lastTime >= 1000) {
+        document.getElementById('fps-counter').textContent = frameCount;
+        frameCount = 0;
+        lastTime = currentTime;
+        
+        // Update memory usage (approximation)
+        const memoryMB = (pointsData.length * 24 / 1024 / 1024).toFixed(1);
+        document.getElementById('memory-usage').textContent = memoryMB + ' MB';
+      }
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      initThree();
+      
+      // Sliders
+      document.getElementById('density-slider').addEventListener('input', (e) => {
+        document.getElementById('density-value').textContent = e.target.value;
+        updatePointCloud();
+      });
+      
+      document.getElementById('size-slider').addEventListener('input', (e) => {
+        document.getElementById('size-value').textContent = e.target.value;
+        updatePointCloud();
+      });
+      
+      document.getElementById('opacity-slider').addEventListener('input', (e) => {
+        document.getElementById('opacity-value').textContent = e.target.value;
+        updatePointCloud();
+      });
+      
+      document.getElementById('height-filter').addEventListener('input', (e) => {
+        document.getElementById('height-value').textContent = e.target.value;
+      });
+      
+      document.getElementById('update-rate').addEventListener('input', (e) => {
+        document.getElementById('rate-value').textContent = e.target.value;
+      });
+      
+      // Color mode
+      document.getElementById('color-mode').addEventListener('change', updatePointCloud);
+      document.getElementById('custom-color').addEventListener('change', updatePointCloud);
+      
+      // Color presets
+      document.querySelectorAll('.color-preset').forEach(preset => {
+        preset.addEventListener('click', () => {
+          document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('active'));
+          preset.classList.add('active');
+          document.getElementById('custom-color').value = preset.dataset.color;
+          updatePointCloud();
+        });
+      });
+      
+      // Buttons
+      document.getElementById('connect-btn').addEventListener('click', connectSocket);
+      document.getElementById('disconnect-btn').addEventListener('click', disconnectSocket);
+      document.getElementById('clear-points').addEventListener('click', () => {
+        pointsData = [];
+        updatePointCloud();
+      });
+      document.getElementById('generate-sample').addEventListener('click', generateSampleData);
+      
+      document.getElementById('apply-filters').addEventListener('click', () => {
+        const minDist = parseFloat(document.getElementById('min-distance').value);
+        const maxDist = parseFloat(document.getElementById('max-distance').value);
+        const heightFilter = parseFloat(document.getElementById('height-filter').value);
+        
+        pointsData = pointsData.filter(point => {
+          const dist = Math.sqrt(point.x*point.x + point.y*point.y + point.z*point.z);
+          return dist >= minDist && dist <= maxDist && Math.abs(point.y - heightFilter) < 5;
+        });
+        
+        updatePointCloud();
+      });
+      
+      document.getElementById('reset-filters').addEventListener('click', () => {
+        document.getElementById('min-distance').value = 0.1;
+        document.getElementById('max-distance').value = 100;
+        document.getElementById('height-filter').value = 0;
+        document.getElementById('height-value').textContent = '0';
+      });
+      
+      document.getElementById('reset-camera').addEventListener('click', () => {
+        camera.position.set(10, 10, 10);
+        camera.lookAt(0, 0, 0);
+      });
+      
+      document.getElementById('save-screenshot').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = 'pointcloud_screenshot.png';
+        link.href = renderer.domElement.toDataURL();
+        link.click();
+      });
+      
+      // Generate initial sample data
+      generateSampleData();
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,30 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Flask,Blueprint, render_template, jsonify, request
 from routes.shared_state import get_store
+from flask_socketio import SocketIO
+import logging
 
+import eventlet
+eventlet.monkey_patch()   
+
+from .handler_alpine import init_button_handler
+
+app = Flask(__name__)
 bp = Blueprint('main', __name__)
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(message)s")
+
+log = logging.getLogger(__name__)
+
+socketio = SocketIO(
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    logger=False,  # Disabilita i log dettagliati di SocketIO
+    engineio_logger=False
+)
+
+init_button_handler(socketio)
+
 
 @bp.route('/')
 def index():
@@ -13,8 +36,8 @@ def load_page(page):
         return render_template(page)
     except:
         return "Pagina non trovata", 404
-
-
+    
+# for POST requests to update shared state
 @bp.route('/state/<name>', methods=['GET'])
 def state(name):
     store = get_store(name)

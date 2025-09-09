@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Voltage & Current Monitor</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -220,7 +219,8 @@
       <div class="controls-row">
         <button class="control-button" id="pause-btn">Pause</button>
         <button class="control-button" id="reset-btn">Reset</button>
-        <button class="control-button" id="export-btn">Export Data</button>
+        <button class="control-button" id="export-json-btn">Export JSON</button>
+        <button class="control-button" id="export-csv-btn">Export CSV</button>
       </div>
     </div>
     <h2 class="description-title">Dashboard Overview</h2>
@@ -231,99 +231,117 @@
   </div>
 
   <!-- Monitors Container -->
-  <div class="monitors-container">
-    <!-- Voltage Section -->
-    <div class="monitor-section voltage-theme">
-      <div class="section-title">
-        <span>Voltage Monitor</span>
-        <div class="value-display" id="voltage-current">0.00 V</div>
-      </div>
-      
-      <div class="chart-container">
-        <canvas id="voltageChart"></canvas>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Current</div>
-          <div class="stat-value" id="voltage-instantaneous">0.00 V</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="voltage-average">0.00 V</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Peak</div>
-          <div class="stat-value" id="voltage-peak">0.00 V</div>
-        </div>
-      </div>
-
-      <div class="status-info">
-        <div class="connection-status">
-          <div class="status-indicator" id="voltage-status"></div>
-          <span>Voltage Sensor</span>
-        </div>
-        <span>Samples: <span id="voltage-samples">0</span></span>
-      </div>
-    </div>
-
-    <!-- Current Section -->
-    <div class="monitor-section current-theme">
-      <div class="section-title">
-        <span>Current Monitor</span>
-        <div class="value-display" id="current-current">0.00 A</div>
-      </div>
-      
-      <div class="chart-container">
-        <canvas id="currentChart"></canvas>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Current</div>
-          <div class="stat-value" id="current-instantaneous">0.00 A</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="current-average">0.00 A</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Peak</div>
-          <div class="stat-value" id="current-peak">0.00 A</div>
-        </div>
-      </div>
-
-      <div class="status-info">
-        <div class="connection-status">
-          <div class="status-indicator" id="current-status"></div>
-          <span>Current Sensor</span>
-        </div>
-        <span>Samples: <span id="current-samples">0</span></span>
-      </div>
-    </div>
+  <div class="monitors-container" id="monitors-container">
+    <!-- Sections will be generated dynamically by JavaScript -->
   </div>
 
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include Socket.IO -->
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  
   <script>
-    // Simulate Socket.IO connection for demo
-    const socket = {
-      connected: false,
-      on: function(event, callback) {
-        // Simulate connection events
+    // Monitor configuration - Add new monitors here easily
+    const monitorConfigs = [
+      {
+        id: 'voltage',
+        label: 'Voltage Monitor',
+        unit: 'V',
+        theme: 'voltage-theme',
+        color: '#ff6b6b',
+        backgroundColor: 'rgba(255, 107, 107, 0.1)'
+      },
+      {
+        id: 'current',
+        label: 'Current Monitor', 
+        unit: 'A',
+        theme: 'current-theme',
+        color: '#4ecdc4',
+        backgroundColor: 'rgba(78, 205, 196, 0.1)'
       }
-    };
+    ];
     
     // Data storage
-    const maxDataPoints = 100;
+    const maxDataPoints = 1000;
+    let monitorData = {};
+    let monitorStats = {};
+    let charts = {};
+    let elements = {};
+    let isPaused = false;
+    
+    // Initialize data structures for each monitor
+    monitorConfigs.forEach(config => {
+      monitorData[config.id] = [];
+      monitorStats[config.id] = { sum: 0, count: 0, peak: 0 };
+    });
+
+    // Function to create a monitor section
+    function createMonitorSection(config) {
+      return `
+        <div class="monitor-section ${config.theme}">
+          <div class="section-title">
+            <span>${config.label}</span>
+            <div class="value-display" id="${config.id}-current">0.00 ${config.unit}</div>
+          </div>
+          
+          <div class="chart-container">
+            <canvas id="${config.id}Chart"></canvas>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">Current</div>
+              <div class="stat-value" id="${config.id}-instantaneous">0.00 ${config.unit}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Average</div>
+              <div class="stat-value" id="${config.id}-average">0.00 ${config.unit}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Peak</div>
+              <div class="stat-value" id="${config.id}-peak">0.00 ${config.unit}</div>
+            </div>
+          </div>
+
+          <div class="status-info">
+            <div class="connection-status">
+              <div class="status-indicator" id="${config.id}-status"></div>
+              <span>${config.label.replace(' Monitor', ' Sensor')}</span>
+            </div>
+            <span>Samples: <span id="${config.id}-samples">0</span></span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Generate monitor sections dynamically
+    function initializeMonitors() {
+      const container = document.getElementById('monitors-container');
+      container.innerHTML = monitorConfigs.map(createMonitorSection).join('');
+      
+      // Cache DOM elements for each monitor
+      monitorConfigs.forEach(config => {
+        elements[config.id] = {
+          current: document.getElementById(`${config.id}-current`),
+          instantaneous: document.getElementById(`${config.id}-instantaneous`),
+          average: document.getElementById(`${config.id}-average`),
+          peak: document.getElementById(`${config.id}-peak`),
+          samples: document.getElementById(`${config.id}-samples`),
+          status: document.getElementById(`${config.id}-status`)
+        };
+      });
+    }
+    
+    // Data storage - keeping legacy variable names for compatibility
     let voltageData = [];
     let currentData = [];
     let timeLabels = [];
-    let isPaused = false;
     
-    // Statistics tracking
+    // Statistics tracking - keeping legacy variable names for compatibility  
     let voltageStats = { sum: 0, count: 0, peak: 0 };
     let currentStats = { sum: 0, count: 0, peak: 0 };
 
-    // Chart configuration
+    // Chart configuration template
     const chartConfig = {
       type: 'line',
       options: {
@@ -369,70 +387,53 @@
       }
     };
 
-    // Initialize voltage chart
-    const voltageChart = new Chart(document.getElementById('voltageChart'), {
-      ...chartConfig,
-      data: {
-        datasets: [{
-          label: 'Voltage',
-          data: [],
-          borderColor: '#ff6b6b',
-          backgroundColor: 'rgba(255, 107, 107, 0.1)',
-          borderWidth: 2,
-          fill: true
-        }]
-      }
-    });
+    // Initialize charts for each monitor
+    function initializeCharts() {
+      monitorConfigs.forEach(config => {
+        charts[config.id] = new Chart(document.getElementById(`${config.id}Chart`), {
+          ...chartConfig,
+          data: {
+            datasets: [{
+              label: config.label,
+              data: [],
+              borderColor: config.color,
+              backgroundColor: config.backgroundColor,
+              borderWidth: 2,
+              fill: true
+            }]
+          }
+        });
+      });
+    }
 
-    // Initialize current chart
-    const currentChart = new Chart(document.getElementById('currentChart'), {
-      ...chartConfig,
-      data: {
-        datasets: [{
-          label: 'Current',
-          data: [],
-          borderColor: '#4ecdc4',
-          backgroundColor: 'rgba(78, 205, 196, 0.1)',
-          borderWidth: 2,
-          fill: true
-        }]
-      }
-    });
+    // Legacy chart variables for compatibility
+    let voltageChart, currentChart;
 
-    // DOM elements
-    const elements = {
-      voltage: {
-        current: document.getElementById('voltage-current'),
-        instantaneous: document.getElementById('voltage-instantaneous'),
-        average: document.getElementById('voltage-average'),
-        peak: document.getElementById('voltage-peak'),
-        samples: document.getElementById('voltage-samples'),
-        status: document.getElementById('voltage-status')
-      },
-      current: {
-        current: document.getElementById('current-current'),
-        instantaneous: document.getElementById('current-instantaneous'),
-        average: document.getElementById('current-average'),
-        peak: document.getElementById('current-peak'),
-        samples: document.getElementById('current-samples'),
-        status: document.getElementById('current-status')
-      }
-    };
-
-    // Update statistics
-    function updateStats(value, stats, type) {
+    // Generic update statistics function
+    function updateStats(value, type) {
+      const config = monitorConfigs.find(c => c.id === type);
+      if (!config) return;
+      
+      const stats = monitorStats[type];
       stats.sum += value;
       stats.count++;
       stats.peak = Math.max(stats.peak, Math.abs(value));
       
       const average = stats.sum / stats.count;
-      const suffix = type === 'voltage' ? ' V' : ' A';
+      const suffix = ` ${config.unit}`;
       
       elements[type].instantaneous.textContent = value.toFixed(2) + suffix;
       elements[type].average.textContent = average.toFixed(2) + suffix;
       elements[type].peak.textContent = stats.peak.toFixed(2) + suffix;
       elements[type].samples.textContent = stats.count.toString();
       elements[type].current.textContent = value.toFixed(2) + suffix;
+      
+      // Update legacy stats for compatibility
+      if (type === 'voltage') {
+        voltageStats = stats;
+      } else if (type === 'current') {
+        currentStats = stats;
+      }
     }
 
     // Add data point
@@ -451,17 +452,88 @@
         currentData.shift();
       }
       
-      // Update charts
-      voltageChart.data.datasets[0].data = voltageData;
-      currentChart.data.datasets[0].data = currentData;
+      // Update charts using the new chart structure
+      charts.voltage.data.datasets[0].data = voltageData;
+      charts.current.data.datasets[0].data = currentData;
       
-      voltageChart.update('none');
-      currentChart.update('none');
+      charts.voltage.update('none');
+      charts.current.update('none');
+      
+      // Update legacy chart references for compatibility
+      voltageChart = charts.voltage;
+      currentChart = charts.current;
       
       // Update statistics
-      updateStats(voltage, voltageStats, 'voltage');
-      updateStats(current, currentStats, 'current');
+      updateStats(voltage, 'voltage');
+      updateStats(current, 'current');
+      
+      // Update connection status indicators
+      updateConnectionStatus();
     }
+
+    // Update connection status
+    function updateConnectionStatus() {
+      monitorConfigs.forEach(config => {
+        elements[config.id].status.classList.add('connected');
+      });
+    }
+
+    // Initialize everything when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeMonitors();
+      initializeCharts();
+      
+      // Set legacy chart references for compatibility
+      voltageChart = charts.voltage;
+      currentChart = charts.current;
+    });
+
+    // Socket.IO Handle
+    const socket = io();
+
+    socket.on('connect', function() {
+      console.log('Connected to server');
+      updateConnectionStatus();
+    });
+    
+    socket.on('disconnect', function() {
+      console.log('Disconnected from server');
+      monitorConfigs.forEach(config => {
+        if (elements[config.id]) {
+          elements[config.id].status.classList.remove('connected');
+        }
+      });
+    });
+
+    /*
+    // Handle sensor data (both voltage and current together)
+    
+    socket.on('sensor_data', function(data) {
+      const voltage = parseFloat(data.voltage || 0);
+      const current = parseFloat(data.current || 0);
+      const timestamp = data.timestamp || Date.now();
+      
+      addDataPoint(timestamp, voltage, current);
+    });
+    */
+    
+    // Handle individual voltage data
+    socket.on('voltage_data', function(data) {
+      const voltage = parseFloat(data.value || 0);
+      const timestamp = data.timestamp || Date.now();
+      // If we don't have recent current data, use the last known value or 0
+      const lastCurrent = currentData.length > 0 ? currentData[currentData.length - 1].y : 0;
+      addDataPoint(timestamp, voltage, lastCurrent);
+    });
+
+    // Handle individual current data
+    socket.on('current_data', function(data) {
+      const current = parseFloat(data.value || 0);
+      const timestamp = data.timestamp || Date.now();
+      // If we don't have recent voltage data, use the last known value or 0
+      const lastVoltage = voltageData.length > 0 ? voltageData[voltageData.length - 1].y : 0;
+      addDataPoint(timestamp, lastVoltage, current);
+    });
 
     // Control buttons
     document.getElementById('pause-btn').addEventListener('click', function() {
@@ -473,26 +545,30 @@
     document.getElementById('reset-btn').addEventListener('click', function() {
       voltageData = [];
       currentData = [];
+      
+      // Reset all monitor stats
+      monitorConfigs.forEach(config => {
+        monitorStats[config.id] = { sum: 0, count: 0, peak: 0 };
+        charts[config.id].data.datasets[0].data = [];
+        charts[config.id].update();
+      });
+      
+      // Reset legacy stats for compatibility
       voltageStats = { sum: 0, count: 0, peak: 0 };
       currentStats = { sum: 0, count: 0, peak: 0 };
       
-      voltageChart.data.datasets[0].data = [];
-      currentChart.data.datasets[0].data = [];
-      voltageChart.update();
-      currentChart.update();
-      
       // Reset displays
-      ['voltage', 'current'].forEach(type => {
-        const suffix = type === 'voltage' ? ' V' : ' A';
-        elements[type].current.textContent = '0.00' + suffix;
-        elements[type].instantaneous.textContent = '0.00' + suffix;
-        elements[type].average.textContent = '0.00' + suffix;
-        elements[type].peak.textContent = '0.00' + suffix;
-        elements[type].samples.textContent = '0';
+      monitorConfigs.forEach(config => {
+        const suffix = ` ${config.unit}`;
+        elements[config.id].current.textContent = '0.00' + suffix;
+        elements[config.id].instantaneous.textContent = '0.00' + suffix;
+        elements[config.id].average.textContent = '0.00' + suffix;
+        elements[config.id].peak.textContent = '0.00' + suffix;
+        elements[config.id].samples.textContent = '0';
       });
     });
 
-    document.getElementById('export-btn').addEventListener('click', function() {
+    document.getElementById('export-json-btn').addEventListener('click', function() {
       const data = {
         timestamp: new Date().toISOString(),
         voltage_data: voltageData,
@@ -510,14 +586,56 @@
       URL.revokeObjectURL(url);
     });
 
-    // Simulate data for testing
-    let testTime = 0;
-    setInterval(() => {
-      const voltage = 12 + Math.sin(testTime * 0.1) * 2 + (Math.random() - 0.5) * 0.5;
-      const current = 2 + Math.cos(testTime * 0.15) * 0.8 + (Math.random() - 0.5) * 0.2;
-      addDataPoint(Date.now(), voltage, current);
-      testTime++;
-    }, 100);
+    document.getElementById('export-csv-btn').addEventListener('click', function() {
+      // Create CSV header
+      const headers = ['Timestamp', 'Time_Seconds', 'Voltage_V', 'Current_A'];
+      
+      // Create CSV rows
+      const rows = [];
+      const maxLength = Math.max(voltageData.length, currentData.length);
+      
+      for (let i = 0; i < maxLength; i++) {
+        const voltagePoint = voltageData[i] || { x: 0, y: 0 };
+        const currentPoint = currentData[i] || { x: 0, y: 0 };
+        
+        // Use the timestamp from voltage data or current data (whichever is available)
+        const timeSeconds = voltagePoint.x || currentPoint.x;
+        const timestamp = new Date(timeSeconds * 1000).toISOString();
+        
+        const row = [
+          timestamp,
+          timeSeconds.toFixed(3),
+          voltagePoint.y.toFixed(3),
+          currentPoint.y.toFixed(3)
+        ];
+        
+        rows.push(row.join(','));
+      }
+      
+      // Combine header and data
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      
+      // Add summary statistics as comments at the end
+      const summaryLines = [
+        '',
+        '# Summary Statistics',
+        `# Voltage - Samples: ${voltageStats.count}, Average: ${(voltageStats.sum / voltageStats.count || 0).toFixed(3)}V, Peak: ${voltageStats.peak.toFixed(3)}V`,
+        `# Current - Samples: ${currentStats.count}, Average: ${(currentStats.sum / currentStats.count || 0).toFixed(3)}A, Peak: ${currentStats.peak.toFixed(3)}A`,
+        `# Export Date: ${new Date().toISOString()}`
+      ];
+      
+      const finalContent = csvContent + '\n' + summaryLines.join('\n');
+      
+      // Create and download the file
+      const blob = new Blob([finalContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sensor_data_${new Date().toISOString().slice(0, 19)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
   </script>
 </body>
 </html>
