@@ -895,7 +895,6 @@ iframe {
   color: #00ff88;
   margin-bottom: 20px;
   border-bottom: 1px dashed #555;
-  padding-bottom: 5px;
 }
 
 .data-item {
@@ -1053,4 +1052,15 @@ iframe {
   background: rgba(30, 30, 45, 0.5);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-title {
+  font-size: 14px;
+  color: #00ff88;
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px dashed #555;
+  padding-bottom: 5px;
 }
