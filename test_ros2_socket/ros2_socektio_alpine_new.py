@@ -7,6 +7,7 @@ import random
 import time
 from std_msgs.msg import Float32
 from std_srvs.srv import Trigger  
+from std_msgs.msg import Int32
 class AlpineDataSender(Node):
 
     def __init__(self):
@@ -14,7 +15,7 @@ class AlpineDataSender(Node):
 
         # Gestione salti rimanenti (inizializza prima di tutto)
         self.total_jumps = 10
-        self.remaining_jumps = 10
+        self.remaining_jumps = self.total_jumps
 
         # Configurazione Socket.IO (client)
         self.sio = socketio.Client()
@@ -58,7 +59,15 @@ class AlpineDataSender(Node):
             'opti_jump': False,
         }
         
-        # ROS2 Subscribers per ricevere dati joystick
+        
+        # Timer per inviare periodicamente i dati alla web app (10Hz)
+        self.timer_robot_cmd = self.create_timer(0.1, self.send_robot_cmd_periodic)
+        # Configura i listener per ricevere stati dei pulsanti
+        self.setup_button_listeners()
+        self.is_jumping = False
+        
+        # =========================== ROS2 definition ===========================
+        
         self.robot_cmd = {"throttle": 0.0, "yaw": 0.0}
         self.throttle_sub = self.create_subscription(
             Float32, 'joystick/thrust', self.throttle_callback, 10)
@@ -67,12 +76,19 @@ class AlpineDataSender(Node):
         self.srv_trigger_jump = self.create_service(
             Trigger, 'joystick/SE', self.trigger_jump_service_callback
         )
+        self.srv_reset_jumps = self.create_service(
+            Trigger, 'reset_jumps', self.reset_jumps_service_callback
+        )
+        self.srv_minus_one_jump = self.create_service(
+            Trigger, 'minus_one_jump', self.minus_one_jump_service_callback
+        )
+                
+        self.sub_set_total_jumps = self.create_subscription(
+            Int32, 'set_total_jumps', self.set_total_jumps_callback, 10
+        )
+
+
         
-        # Timer per inviare periodicamente i dati alla web app (10Hz)
-        self.timer_robot_cmd = self.create_timer(0.1, self.send_robot_cmd_periodic)
-        # Configura i listener per ricevere stati dei pulsanti
-        self.setup_button_listeners()
-        self.is_jumping = False
     
     def throttle_callback(self, msg):
         """Callback per ricevere dati throttle dal joystick ROS2"""
@@ -87,11 +103,26 @@ class AlpineDataSender(Node):
     def trigger_jump_service_callback(self, request, response):
         """Callback per il service Trigger joystick/SE"""
         self.get_logger().info("📡 Service 'joystick/SE' chiamato!")
-        self.trigger_jump_indicator()
         response.success = True
         response.message = "Jump indicator attivato con successo"
         return response
         
+    def reset_jumps_service_callback(self, request, response):
+        self.reset_jumps()
+        response.success = True
+        response.message = f"Salti resettati a {self.total_jumps}"
+        return response 
+
+    def minus_one_jump_service_callback(self, request, response):
+        before = self.remaining_jumps
+        self.minus_one_jump()
+        response.success = True
+        response.message = f"Salti: {before} → {self.remaining_jumps}"
+        return response
+    
+    def set_total_jumps_callback(self, msg):
+        self.set_total_jumps(msg.data)
+
     def trigger_jump_indicator(self):
         """Attiva il jump indicator nella web app"""
         #if is jumping was already true now do false o viceversa
@@ -99,13 +130,6 @@ class AlpineDataSender(Node):
         if self.sio.connected:
             self.sio.emit('jump_indicator', {'jumping': self.is_jumping})
             self.get_logger().info("🦘 Jump indicator inviato alla web app!")
-            
-            # Se si sta attivando un salto, decrementa i salti rimanenti
-            if self.is_jumping and self.remaining_jumps > 0:
-                self.minus_one_jump()  # Usa il metodo minus_one_jump invece
-            elif self.is_jumping and self.remaining_jumps <= 0:
-                self.get_logger().warn("Tentativo di salto ma nessun salto rimanente!")
-            
         else:
             self.get_logger().warn("Non connesso a Socket.IO, impossibile inviare jump indicator")
     
@@ -156,8 +180,6 @@ class AlpineDataSender(Node):
             if self.button_states['test_single_jump']:
                 self.get_logger().info("🦘 Test Single Jump attivato")
                 self.reset_other_test_modes('test_single_jump')
-                # Decrementa i salti quando viene attivato Single Jump
-                self.minus_one_jump()
                 
         @self.sio.on('button_test_multi_jump')
         def on_test_multi_jump(data):
@@ -165,8 +187,6 @@ class AlpineDataSender(Node):
             if self.button_states['test_multi_jump']:
                 self.get_logger().info("🦘🦘 Test Multi Jump attivato")
                 self.reset_other_test_modes('test_multi_jump')
-                # Decrementa i salti quando viene attivato Multi Jump
-                self.minus_one_jump()
                 
         @self.sio.on('button_discrete_jump')
         def on_discrete_jump(data):
@@ -175,7 +195,6 @@ class AlpineDataSender(Node):
                 self.get_logger().info("📐 Discrete Jump attivato")
                 self.reset_other_test_modes('discrete_jump')
                 # Decrementa i salti quando viene attivato Discrete Jump
-                self.minus_one_jump()
                 
         @self.sio.on('button_opti_jump')
         def on_opti_jump(data):
@@ -184,7 +203,6 @@ class AlpineDataSender(Node):
                 self.get_logger().info("⚡ Opti Jump attivato")
                 self.reset_other_test_modes('opti_jump')
                 # Decrementa i salti quando viene attivato Opti Jump
-                self.minus_one_jump()
         
         # Listener opzionale per joystick_data (se serve supportare anche questo formato)
         @self.sio.on('joystick_data')
@@ -230,22 +248,22 @@ class AlpineDataSender(Node):
         """Esegue il salto basato sul modo selezionato"""
         if mode == 'test_single_jump':
             self.get_logger().info("Executing single jump")
-            self.minus_one_jump()  # Decrementa salti
+            
             # Logica per single jump
             
         elif mode == 'test_multi_jump':
             self.get_logger().info("Executing multi jump")
-            self.minus_one_jump()  # Decrementa salti
+            
             # Logica per multi jump
             
         elif mode == 'discrete_jump':
             self.get_logger().info("Executing discrete jump")
-            self.minus_one_jump()  # Decrementa salti
+            
             # Logica per discrete jump
             
         elif mode == 'opti_jump':
             self.get_logger().info("Executing optimized jump")
-            self.minus_one_jump()  # Decrementa salti
+            
             # Logica per optimized jump
     
     def send_jumps_remaining(self):
@@ -277,7 +295,6 @@ class AlpineDataSender(Node):
         else:
             self.get_logger().warn("Nessun salto rimanente - impossibile decrementare ulteriormente")
             
-            
     def destroy_node(self):
         """Cleanup quando il nodo viene distrutto"""
         self.get_logger().info("🔌 Disconnettendo da Socket.IO...")
@@ -308,3 +325,10 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+# example of the message in command line
+# ros2 topic pub /set_total_jumps std_msgs/msg/Int32 "{data: 15}" --once
+# ros2 service call /minus_one_jump std_srvs/srv/Trigger "{}"
+# ros2 service call /reset_jumps std_srvs/srv/Trigger "{}"
+
