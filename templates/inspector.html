@@ -16,25 +16,29 @@
       <!-- Prima riga con due sezioni affiancate -->
       <div class="data-row">
         <div class="data-section">
-          <div class="data-title">Status Robot</div>
+          <div class="data-title">Winch Right</div>
           
           <div class="data-group">
-            <div class="group-title">Alpine_Status</div>
+            <div class="group-title">Telemetry</div>
             <div class="data-item">
-              <span class="data-label">esp32_status</span>
-              <span class="data-value">Connected</span>
+              <span class="data-label">Rope force</span>
+              <span class="data-value" id="winch-right-rope-force">0.0</span>
             </div>
             <div class="data-item">
-              <span class="data-label">Signal Strength</span>
-              <span class="data-value">98%</span>
+              <span class="data-label">Rope length</span>
+              <span class="data-value" id="winch-right-rope-length">0.0</span>
             </div>
             <div class="data-item">
-              <span class="data-label">Battery</span>
-              <span class="data-value">100%</span>
+              <span class="data-label">Rope velocity</span>
+              <span class="data-value" id="winch-right-rope-velocity">0.0</span>
             </div>
             <div class="data-item">
-              <span class="data-label">Battery_tank</span>
-              <span class="data-value">100%</span>
+              <span class="data-label">Current</span>
+              <span class="data-value" id="winch-right-current">0.0 A</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Brake Status</span>
+              <span class="data-value" id="winch-right-brake-status">False</span>
             </div>
           </div>
  
@@ -42,37 +46,46 @@
             <div class="group-title">Winch_DX</div>
             <div class="data-item">
               <span class="data-label">Connected</span>
-              <span class="data-value">True</span>
+              <span class="data-value" id="winch-right-connected">False</span>
             </div>
           </div>
+        </div>
+
+        <div class="data-section">
+          <div class="data-title">Winch Left</div>
+          
+          <div class="data-group">
+            <div class="group-title">Telemetry</div>
+            <div class="data-item">
+              <span class="data-label">Rope force</span>
+              <span class="data-value" id="winch-left-rope-force">0.0</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Rope length</span>
+              <span class="data-value" id="winch-left-rope-length">0.0</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Rope velocity</span>
+              <span class="data-value" id="winch-left-rope-velocity">0.0</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Current</span>
+              <span class="data-value" id="winch-left-current">0.0 A</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Brake Status</span>
+              <span class="data-value" id="winch-left-brake-status">False</span>
+            </div>
+          </div>
+
           <div class="data-group">
             <div class="group-title">Winch_SX</div>
             <div class="data-item">
               <span class="data-label">Connected</span>
-              <span class="data-value">True</span>
+              <span class="data-value" id="winch-left-connected">False</span>
             </div>
           </div>
           
-        </div>
-
-        <div class="data-section">
-          <div class="data-title">Control Values</div>
-          
-          <div class="data-group">
-            <div class="group-title">Winch_SX</div>
-            <div class="data-item">
-              <span class="data-label">Value_1 (to_define)</span>
-              <span class="data-value" id="val_1">1024</span>
-            </div>
-            <div class="data-item">
-              <span class="data-label">Value_1 (to_define)</span>
-              <span class="data-value" id="val_1">1024</span>
-            </div>
-            <div class="data-item">
-              <span class="data-label">Value_1 (to_define)</span>
-              <span class="data-value" id="val_1">1024</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

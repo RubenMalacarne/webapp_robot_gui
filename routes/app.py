@@ -7,6 +7,7 @@ import eventlet
 eventlet.monkey_patch()   
 
 from .handler_alpine import init_button_handler
+from .handler_inspector import init_button_handler as init_inspector_handler
 
 app = Flask(__name__)
 bp = Blueprint('main', __name__)
@@ -24,6 +25,7 @@ socketio = SocketIO(
 )
 
 init_button_handler(socketio)
+init_inspector_handler(socketio)  # Inizializza anche l'handler inspector
 
 
 @bp.route('/')

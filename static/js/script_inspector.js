@@ -1,75 +1,48 @@
 // Inizializza Socket.IO
 const socket = io();
 
+socket.on('winch_telemetry', function(data) {
+    console.log("Telemetria aggiornata:", data);
+
+    if (data.winch_right) {
+        document.getElementById('winch-right-rope-force').textContent = data.winch_right.rope_force.toFixed(2);
+        document.getElementById('winch-right-rope-length').textContent = data.winch_right.rope_length.toFixed(2);
+        document.getElementById('winch-right-rope-velocity').textContent = data.winch_right.rope_velocity.toFixed(2);
+        document.getElementById('winch-right-current').textContent = data.winch_right.current.toFixed(2) + " A";
+        document.getElementById('winch-right-brake-status').textContent = data.winch_right.brake_status;
+        document.getElementById('winch-right-connected').textContent = data.winch_right.connected;
+    }
+
+    if (data.winch_left) {
+        document.getElementById('winch-left-rope-force').textContent = data.winch_left.rope_force.toFixed(2);
+        document.getElementById('winch-left-rope-length').textContent = data.winch_left.rope_length.toFixed(2);
+        document.getElementById('winch-left-rope-velocity').textContent = data.winch_left.rope_velocity.toFixed(2);
+        document.getElementById('winch-left-current').textContent = data.winch_left.current.toFixed(2) + " A";
+        document.getElementById('winch-left-brake-status').textContent = data.winch_left.brake_status;
+        document.getElementById('winch-left-connected').textContent = data.winch_left.connected;
+    }
+});
+
 // Registra questo client
 socket.emit('register', { node: 'inspector_gui' });
 
-// Socket.IO Listeners per ricevere dati dal backend
-socket.on('robot_status', (data) => {
-    console.log('Ricevuti dati status robot:', data);
-    
-    // Aggiorna stato ESP32
-    if (data.esp32_status !== undefined) {
-        updateStatusValue('esp32_status', data.esp32_status ? 'Connected' : 'Disconnected', 
-                         data.esp32_status ? 'status-connected' : 'status-disconnected');
+// Variabili per tracking degli aggiornamenti
+let lastUpdate = Date.now();
+
+
+// Listener per dati telemetria winch
+socket.on('winch_telemetry', (data) => {
+    console.log('Ricevuti dati telemetria winch:', data);
+    // Aggiorna Winch Right (DX)
+    if (data.winch_right) {
+        updateWinchTelemetry('right', data.winch_right);
     }
-    
-    // Aggiorna forza del segnale
-    if (data.signal_strength !== undefined) {
-        updateStatusValue('signal_strength', data.signal_strength + '%', 
-                         data.signal_strength > 80 ? 'status-connected' : 
-                         data.signal_strength > 50 ? 'status-warning' : 'status-disconnected');
+    // Aggiorna Winch Left (SX) 
+    if (data.winch_left) {
+        updateWinchTelemetry('left', data.winch_left);
     }
-    
-    // Aggiorna batteria
-    if (data.battery !== undefined) {
-        updateStatusValue('battery', data.battery + '%', 
-                         data.battery > 50 ? 'status-connected' : 
-                         data.battery > 20 ? 'status-warning' : 'status-disconnected');
-    }
-    
-    // Aggiorna batteria tank
-    if (data.battery_tank !== undefined) {
-        updateStatusValue('battery_tank', data.battery_tank + '%', 
-                         data.battery_tank > 50 ? 'status-connected' : 
-                         data.battery_tank > 20 ? 'status-warning' : 'status-disconnected');
-    }
-    
     lastUpdate = Date.now();
 });
-
-socket.on('winch_status', (data) => {
-    console.log('Ricevuti dati winch:', data);
-    
-    // Aggiorna stato winch destro
-    if (data.winch_dx !== undefined) {
-        updateWinchStatus('Winch_DX', data.winch_dx.connected);
-    }
-    
-    // Aggiorna stato winch sinistro
-    if (data.winch_sx !== undefined) {
-        updateWinchStatus('Winch_SX', data.winch_sx.connected);
-    }
-    
-    lastUpdate = Date.now();
-});
-
-socket.on('control_values', (data) => {
-    console.log('Ricevuti valori di controllo:', data);
-    
-    // Aggiorna i valori di controllo
-    const valueElements = document.querySelectorAll('#val_1');
-    if (data.winch_sx_values && valueElements.length > 0) {
-        valueElements.forEach((element, index) => {
-            if (data.winch_sx_values[index] !== undefined) {
-                element.textContent = data.winch_sx_values[index];
-            }
-        });
-    }
-    
-    lastUpdate = Date.now();
-});
-
 
 // Listener per eventi di connessione Socket.IO
 socket.on('connect', () => {
@@ -87,62 +60,80 @@ socket.on('connect_error', (error) => {
     updateConnectionStatus(false);
 });
 
-// Funzioni utility per aggiornare l'UI
-function updateStatusValue(fieldName, value, statusClass) {
-    const element = findElementByLabel(fieldName);
+
+function updateWinchTelemetry(side, telemetryData) {
+    const sectionTitle = side === 'right' ? 'Winch Right' : 'Winch Left';
+    const section = findSectionByTitle(sectionTitle);
     
-    if (element) {
-        // Trova il contenuto testuale (escludendo l'indicatore)
-        const textContent = element.childNodes[0];
-        if (textContent && textContent.nodeType === Node.TEXT_NODE) {
-            textContent.textContent = value;
-        } else {
-            // Se non c'è un nodo di testo, crea il contenuto
-            element.innerHTML = `${value}<span class="status-indicator ${statusClass}"></span>`;
-            return;
-        }
-        
-        // Aggiorna l'indicatore di stato
-        const indicator = element.querySelector('.status-indicator');
-        if (indicator) {
-            indicator.className = `status-indicator ${statusClass}`;
-        }
-    } else {
-        console.warn(`Elemento non trovato per: ${fieldName}`);
+    if (!section) {
+        console.warn(`Sezione non trovata: ${sectionTitle}`);
+        return;
     }
+    
+    // Mappa dei campi telemetria
+    const fieldMappings = {
+        'rope_force': 'Rope force',
+        'rope_length': 'Rope length',
+        'rope_velocity': 'Rope velocity',
+        'current': 'Current',
+        'brake_status': 'Brake Status'
+    };
+    
+    // Aggiorna ogni campo telemetrico
+    Object.entries(fieldMappings).forEach(([dataKey, labelText]) => {
+        if (telemetryData[dataKey] !== undefined) {
+            const valueElement = findValueElementInSection(section, labelText);
+            if (valueElement) {
+                let displayValue = telemetryData[dataKey];
+                
+                // Formattazione speciale per alcuni campi
+                if (dataKey === 'current') {
+                    displayValue = `${displayValue} A`;
+                } else if (dataKey === 'brake_status') {
+                    displayValue = displayValue ? 'True' : 'False';
+                    valueElement.style.color = displayValue === 'True' ? '#00ff88' : '#ff4444';
+                }
+                
+                valueElement.textContent = displayValue;
+                console.log(`✅ Aggiornato ${sectionTitle} - ${labelText}: ${displayValue}`);
+            } else {
+                console.warn(`❌ Elemento valore non trovato per ${labelText} in ${sectionTitle}`);
+            }
+        }
+    });
 }
 
-function findElementByLabel(labelText) {
-    const labels = document.querySelectorAll('.data-label');
-    for (let label of labels) {
-        const labelContent = label.textContent.toLowerCase().trim();
-        const searchText = labelText.toLowerCase().replace('_', ' ').replace('_', ' ');
-        
-        // Cerca corrispondenze più precise
-        if (labelContent.includes(searchText) || 
-            labelContent === searchText ||
-            (labelText === 'esp32_status' && labelContent.includes('esp32')) ||
-            (labelText === 'signal_strength' && labelContent.includes('signal')) ||
-            (labelText === 'battery_tank' && labelContent.includes('battery_tank'))) {
-            return label.nextElementSibling;
+function findSectionByTitle(titleText) {
+    const sections = document.querySelectorAll('.data-section');
+    for (let section of sections) {
+        const titleElement = section.querySelector('.data-title');
+        if (titleElement && titleElement.textContent === titleText) {
+            return section;
         }
     }
     return null;
 }
 
-function updateWinchStatus(winchName, connected) {
-    const winchGroups = document.querySelectorAll('.data-group');
-    for (let group of winchGroups) {
-        const titleElement = group.querySelector('.group-title');
-        if (titleElement && titleElement.textContent === winchName) {
-            const valueElement = group.querySelector('.data-value');
-            if (valueElement) {
-                valueElement.textContent = connected ? 'True' : 'False';
-                valueElement.style.color = connected ? '#00ff88' : '#ff4444';
-            }
-            break;
+function findValueElementInSection(section, labelText) {
+    const items = section.querySelectorAll('.data-item');
+    for (let item of items) {
+        const label = item.querySelector('.data-label');
+        if (label && label.textContent === labelText) {
+            return item.querySelector('.data-value');
         }
     }
+    return null;
+}
+
+function findValueElementInGroup(group, labelText) {
+    const items = group.querySelectorAll('.data-item');
+    for (let item of items) {
+        const label = item.querySelector('.data-label');
+        if (label && label.textContent === labelText) {
+            return item.querySelector('.data-value');
+        }
+    }
+    return null;
 }
 
 function updateConnectionStatus(connected) {
@@ -156,7 +147,7 @@ function updateConnectionStatus(connected) {
     });
 }
 
-// Funzione per inviare richieste di dati (opzionale)
+// Funzione per inviare richieste di dati
 function requestDataUpdate() {
     socket.emit('request_inspector_data', { 
         timestamp: Date.now(),
@@ -164,59 +155,24 @@ function requestDataUpdate() {
     });
 }
 
-// Simulazione dati (mantenuta per testing quando non ci sono dati reali)
-function simulateData() {
-    time += 0.1;
-    
-    // Simula solo se non ci sono stati aggiornamenti recenti dai socket
-    const timeSinceLastUpdate = Date.now() - lastUpdate;
-    if (timeSinceLastUpdate > 5000) { // 5 secondi senza aggiornamenti
-        console.log('Nessun dato reale ricevuto, uso simulazione...');
-        
-        // Simula valori di stato
-        const simulatedStatus = {
-            esp32_status: Math.random() > 0.1, // 90% connected
-            signal_strength: Math.floor(85 + Math.sin(time * 0.1) * 15),
-            battery: Math.floor(90 + Math.sin(time * 0.05) * 10),
-            battery_tank: Math.floor(95 + Math.cos(time * 0.08) * 5)
-        };
-        
-        // Simula valori di controllo
-        const simulatedControl = {
-            winch_sx_values: [
-                Math.floor(1024 + Math.sin(time) * 200),
-                Math.floor(512 + Math.cos(time * 1.2) * 100),
-                Math.floor(256 + Math.sin(time * 0.8) * 150)
-            ]
-        };
-        
-        // Emula eventi socket
-        socket.emit('robot_status', simulatedStatus);
-        socket.emit('control_values', simulatedControl);
-    }
-}
-
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔧 Inspector GUI inizializzato');
-    console.log('Elementi presenti:', document.querySelectorAll('.data-item').length);
+    console.log('Sezioni presenti:', document.querySelectorAll('.data-section').length);
+    console.log('Gruppi dati presenti:', document.querySelectorAll('.data-group').length);
+    console.log('Elementi dati presenti:', document.querySelectorAll('.data-item').length);
     
-    // Aggiungi attributi data-field per identificazione più facile
-    const labelMappings = {
-        'esp32_status': 'esp32_status',
-        'Signal Strength': 'signal_strength', 
-        'Battery': 'battery',
-        'Battery_tank': 'battery_tank'
-    };
-    
-    Object.entries(labelMappings).forEach(([labelText, fieldName]) => {
-        const element = findElementByLabel(labelText);
-        if (element) {
-            element.setAttribute('data-field', fieldName);
-            console.log(`✅ Elemento trovato per ${labelText}:`, element);
-        } else {
-            console.warn(`❌ Elemento NON trovato per ${labelText}`);
-        }
+    // Verifica struttura HTML
+    const sections = document.querySelectorAll('.data-section');
+    sections.forEach((section, index) => {
+        const title = section.querySelector('.data-title')?.textContent;
+        console.log(`📋 Sezione ${index + 1}: ${title}`);
+        
+        const groups = section.querySelectorAll('.data-group');
+        groups.forEach((group, groupIndex) => {
+            const groupTitle = group.querySelector('.group-title')?.textContent;
+            console.log(`  📁 Gruppo ${groupIndex + 1}: ${groupTitle}`);
+        });
     });
     
     // Richiedi dati iniziali
@@ -225,10 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
     
     // Avvia simulazione come fallback
-    setInterval(simulateData, 1000);
+    setInterval(simulateData, 2000);
     
     // Richiedi aggiornamenti periodici
-    setInterval(requestDataUpdate, 5000);
+    setInterval(requestDataUpdate, 3000);
 });
 
 // Gestione errori globali
