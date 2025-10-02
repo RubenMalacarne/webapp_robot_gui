@@ -27,3 +27,18 @@ def init_button_handler(socketio: SocketIO):
         
         # Rimanda i dati a tutti i client (es. la tua pagina inspector.html)
         socketio.emit('winch_telemetry', data, broadcast=True)
+    
+
+    @socketio.on('alpine_body_telemetry')
+    def handle_alpine_body_telemetry(data):
+        node = clients.get(request.sid, 'unknown')
+        log.info(f"Telemetria Alpine Body ricevuta da {node}")
+        
+        # Rimanda i dati Alpine Body a tutti i client
+        socketio.emit('alpine_body_telemetry', data, broadcast=True)
+    
+    @socketio.on('request_inspector_data')
+    def handle_request_inspector_data(data):
+        node = clients.get(request.sid, 'unknown')
+        log.info(f"Richiesta dati inspector da {node}")
+        # Here you could implement data request handling if needed

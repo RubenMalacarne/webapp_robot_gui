@@ -44,6 +44,13 @@ socket.on('winch_telemetry', (data) => {
     lastUpdate = Date.now();
 });
 
+// Listener per dati telemetria Alpine Body
+socket.on('alpine_body_telemetry', (data) => {
+    console.log('Ricevuti dati telemetria Alpine Body:', data);
+    updateAlpineBodyTelemetry(data);
+    lastUpdate = Date.now();
+});
+
 // Listener per eventi di connessione Socket.IO
 socket.on('connect', () => {
     console.log('✅ Inspector connesso al server Socket.IO');
@@ -103,6 +110,82 @@ function updateWinchTelemetry(side, telemetryData) {
     });
 }
 
+function updateAlpineBodyTelemetry(data) {
+    console.log('Aggiornamento Alpine Body telemetry:', data);
+    
+    // Aggiorna Rope IMU
+    if (data.rope_imu_orientation) {
+        const element = document.getElementById('rope-imu-orientation');
+        if (element) {
+            element.textContent = `${data.rope_imu_orientation.x.toFixed(3)}, ${data.rope_imu_orientation.y.toFixed(3)}, ${data.rope_imu_orientation.z.toFixed(3)}, ${data.rope_imu_orientation.w.toFixed(3)}`;
+        }
+    }
+    
+    if (data.rope_imu_angular_velocity) {
+        const element = document.getElementById('rope-imu-angular-velocity');
+        if (element) {
+            element.textContent = `${data.rope_imu_angular_velocity.x.toFixed(3)}, ${data.rope_imu_angular_velocity.y.toFixed(3)}, ${data.rope_imu_angular_velocity.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.rope_imu_rpy) {
+        const element = document.getElementById('rope-imu-rpy');
+        if (element) {
+            element.textContent = `${data.rope_imu_rpy.x.toFixed(3)}, ${data.rope_imu_rpy.y.toFixed(3)}, ${data.rope_imu_rpy.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.rope_imu_rpy_d) {
+        const element = document.getElementById('rope-imu-rpy-d');
+        if (element) {
+            element.textContent = `${data.rope_imu_rpy_d.x.toFixed(3)}, ${data.rope_imu_rpy_d.y.toFixed(3)}, ${data.rope_imu_rpy_d.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.rope_imu_acceleration) {
+        const element = document.getElementById('rope-imu-acceleration');
+        if (element) {
+            element.textContent = `${data.rope_imu_acceleration.x.toFixed(3)}, ${data.rope_imu_acceleration.y.toFixed(3)}, ${data.rope_imu_acceleration.z.toFixed(3)}`;
+        }
+    }
+    
+    // Aggiorna Body IMU
+    if (data.body_imu_orientation) {
+        const element = document.getElementById('body-imu-orientation');
+        if (element) {
+            element.textContent = `${data.body_imu_orientation.x.toFixed(3)}, ${data.body_imu_orientation.y.toFixed(3)}, ${data.body_imu_orientation.z.toFixed(3)}, ${data.body_imu_orientation.w.toFixed(3)}`;
+        }
+    }
+    
+    if (data.body_imu_angular_velocity) {
+        const element = document.getElementById('body-imu-angular-velocity');
+        if (element) {
+            element.textContent = `${data.body_imu_angular_velocity.x.toFixed(3)}, ${data.body_imu_angular_velocity.y.toFixed(3)}, ${data.body_imu_angular_velocity.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.body_imu_rpy) {
+        const element = document.getElementById('body-imu-rpy');
+        if (element) {
+            element.textContent = `${data.body_imu_rpy.x.toFixed(3)}, ${data.body_imu_rpy.y.toFixed(3)}, ${data.body_imu_rpy.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.body_imu_rpy_derivatives) {
+        const element = document.getElementById('body-imu-rpy-derivatives');
+        if (element) {
+            element.textContent = `${data.body_imu_rpy_derivatives.x.toFixed(3)}, ${data.body_imu_rpy_derivatives.y.toFixed(3)}, ${data.body_imu_rpy_derivatives.z.toFixed(3)}`;
+        }
+    }
+    
+    if (data.body_imu_acceleration) {
+        const element = document.getElementById('body-imu-acceleration');
+        if (element) {
+            element.textContent = `${data.body_imu_acceleration.x.toFixed(3)}, ${data.body_imu_acceleration.y.toFixed(3)}, ${data.body_imu_acceleration.z.toFixed(3)}`;
+        }
+    }
+}
+
 function findSectionByTitle(titleText) {
     const sections = document.querySelectorAll('.data-section');
     for (let section of sections) {
@@ -155,6 +238,7 @@ function requestDataUpdate() {
     });
 }
 
+
 // Inizializzazione
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔧 Inspector GUI inizializzato');
@@ -179,10 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         requestDataUpdate();
     }, 1000);
-    
-    // Avvia simulazione come fallback
-    setInterval(simulateData, 2000);
-    
     // Richiedi aggiornamenti periodici
     setInterval(requestDataUpdate, 3000);
 });

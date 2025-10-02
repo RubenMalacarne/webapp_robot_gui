@@ -6,6 +6,7 @@ import socketio
 import time
 
 from winch_msgs.msg import RopeTelemetry  
+from winch_msgs.msg import AlpineBodyMsg
 class InspectorDataSender(Node):
 
     def __init__(self):
@@ -56,6 +57,22 @@ class InspectorDataSender(Node):
             'timestamp': 0.0
         }
         
+        # Alpine Body telemetry data
+        self.alpine_body_data = {
+            'rope_imu_orientation': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'w': 1.0},
+            'rope_imu_angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'rope_imu_rpy': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'rope_imu_rpy_d': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'rope_imu_acceleration': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'body_imu_orientation': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'w': 1.0},
+            'body_imu_angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'body_imu_rpy': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'body_imu_rpy_derivatives': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'body_imu_acceleration': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'timestamp': 0.0
+        }
+        
+        
         # =========================== ROS2 Subscriptions ===========================
         
         self.winch_left_telemetry_sub = self.create_subscription(
@@ -63,6 +80,9 @@ class InspectorDataSender(Node):
         
         self.winch_right_telemetry_sub = self.create_subscription(
             RopeTelemetry, '/winch/right/telemetry', self.winch_right_telemetry_callback, 10)
+        
+        self.alpine_body_sub = self.create_subscription(
+            AlpineBodyMsg, '/alpine_body/telemetry', self.alpine_body_callback, 10)
         
         # Timer per invio periodico verso la web app (2 Hz)
         self.create_timer(0.5, self.send_periodic)
@@ -96,6 +116,65 @@ class InspectorDataSender(Node):
         self.get_logger().debug(f"📊 Winch Left Telemetry: force={msg.rope_force}, length={msg.rope_length}")
     
 
+    def alpine_body_callback(self, msg):
+        """Callback per Alpine Body telemetry"""
+        self.alpine_body_data = {
+            'rope_imu_orientation': {
+                'x': msg.rope_imu_orientation.x,
+                'y': msg.rope_imu_orientation.y,
+                'z': msg.rope_imu_orientation.z,
+                'w': msg.rope_imu_orientation.w
+            },
+            'rope_imu_angular_velocity': {
+                'x': msg.rope_imu_angular_velocity.x,
+                'y': msg.rope_imu_angular_velocity.y,
+                'z': msg.rope_imu_angular_velocity.z
+            },
+            'rope_imu_rpy': {
+                'x': msg.rope_imu_rpy.x,
+                'y': msg.rope_imu_rpy.y,
+                'z': msg.rope_imu_rpy.z
+            },
+            'rope_imu_rpy_d': {
+                'x': msg.rope_imu_rpy_d.x,
+                'y': msg.rope_imu_rpy_d.y,
+                'z': msg.rope_imu_rpy_d.z
+            },
+            'rope_imu_acceleration': {
+                'x': msg.rope_imu_acceleration.x,
+                'y': msg.rope_imu_acceleration.y,
+                'z': msg.rope_imu_acceleration.z
+            },
+            'body_imu_orientation': {
+                'x': msg.body_imu_orientation.x,
+                'y': msg.body_imu_orientation.y,
+                'z': msg.body_imu_orientation.z,
+                'w': msg.body_imu_orientation.w
+            },
+            'body_imu_angular_velocity': {
+                'x': msg.body_imu_angular_velocity.x,
+                'y': msg.body_imu_angular_velocity.y,
+                'z': msg.body_imu_angular_velocity.z
+            },
+            'body_imu_rpy': {
+                'x': msg.body_imu_rpy.x,
+                'y': msg.body_imu_rpy.y,
+                'z': msg.body_imu_rpy.z
+            },
+            'body_imu_rpy_derivatives': {
+                'x': msg.body_imu_rpy_derivatives.x,
+                'y': msg.body_imu_rpy_derivatives.y,
+                'z': msg.body_imu_rpy_derivatives.z
+            },
+            'body_imu_acceleration': {
+                'x': msg.body_imu_acceleration.x,
+                'y': msg.body_imu_acceleration.y,
+                'z': msg.body_imu_acceleration.z
+            },
+            'timestamp': time.time()
+        }
+        self.get_logger().debug(f"📊 Alpine Body Telemetry received")
+
     # ----------- INVIO DATI A SOCKET.IO -----------
     def send_periodic(self):
         if not self.sio.connected:
@@ -108,6 +187,7 @@ class InspectorDataSender(Node):
         }
 
         self.sio.emit('telemetry_data', data)
+        self.sio.emit('alpine_body_telemetry', self.alpine_body_data)
         self.get_logger().debug(f"📡 Telemetria inviata: {data}")
 
     # ----------- CLEANUP -----------
@@ -140,6 +220,9 @@ if __name__ == '__main__':
 
 # Esempi di comandi per testare i topic con RopeTelemetry:
 # 
+# Test command for Alpine Body telemetry:
+# ros2 topic pub /alpine_body/telemetry alpine_msgs/msg/AlpineBodyMsg "{rope_imu_orientation: {x: 0.1, y: 0.2, z: 0.3, w: 0.9}, rope_imu_angular_velocity: {x: 0.05, y: -0.03, z: 0.1}, rope_imu_rpy: {x: 0.1, y: 0.05, z: -0.02}, rope_imu_rpy_d: {x: 0.01, y: 0.005, z: -0.008}, rope_imu_acceleration: {x: 0.2, y: -0.1, z: 9.8}, body_imu_orientation: {x: 0.05, y: 0.1, z: 0.15, w: 0.95}, body_imu_angular_velocity: {x: 0.02, y: -0.01, z: 0.03}, body_imu_rpy: {x: 0.05, y: 0.02, z: -0.01}, body_imu_rpy_derivatives: {x: 0.005, y: 0.002, z: -0.001}, body_imu_acceleration: {x: 0.1, y: -0.05, z: 9.85}}" --once
+#
 # Winch Left Telemetry:
 # ros2 topic pub /winch/left/telemetry winch_msgs/msg/RopeTelemetry "{header: {stamp: {sec: 0, nanosec: 0}, frame_id: 'winch_left'}, rope_force: 45.5, rope_length: 150.0, rope_velocity: 2.5, current: 8.3, brake_status: true}" --once
 #
