@@ -14,10 +14,8 @@
         const jumpsRemainingFill = document.getElementById('jumpsRemainingFill');
         const jumpsRemainingText = document.getElementById('jumpsRemainingText');
         
-        // Inizializza Socket.IO
         const socket = io();
         
-        // Registra questo client
         socket.emit('register', { node: 'alpine_gui' });
         
         // Listener jump indicator
@@ -42,16 +40,9 @@
             const remainingJumps = data.remaining || 10;
             const percentage = (remainingJumps / totalJumps) * 100;
             
-            // Aggiorna il testo
             jumpsRemainingText.textContent = `${remainingJumps}/${totalJumps}`;
-            
-            // Aggiorna la larghezza della barra
             jumpsRemainingFill.style.width = `${percentage}%`;
-            
-            // Rimuovi tutte le classi di stato
             jumpsRemainingFill.classList.remove('low', 'critical');
-            
-            // Aggiungi classe appropriata in base alla percentuale
             if (percentage <= 20) {
                 jumpsRemainingFill.classList.add('critical');
             } else if (percentage <= 50) {
@@ -61,7 +52,7 @@
             console.log(`Salti rimanenti: ${remainingJumps}/${totalJumps} (${percentage.toFixed(1)}%)`);
         });
 
-        // Listener per feedback dai pulsanti (opzionale)
+        // Listener per feedback dai pulsanti 
         socket.on('button_start_stop', (data) => {
             console.log('Feedback Start/Stop:', data);
         });
@@ -75,17 +66,15 @@
         });
 
         
-        // Listener per ricevere comandi robot da ROS2 tramite Socket.IO
+        // Listener per ricevere comandi Socket.IO
         socket.on('robot_cmd', (data) => {
             const throttle = data.throttle || 0.0;
             const yaw = data.yaw || 0.0;
             
-            // Converte throttle e yaw in coordinate per il crosshair
-            // Assumendo che throttle sia l'asse Y e yaw sia l'asse X
+            // Converte throttle e yaw in coordinate [throttle sia l'asse Y e yaw sia l'asse X]
             const crosshairX = yaw * joystickRange;        // Yaw -> movimento orizzontale
-            const crosshairY = -throttle * joystickRange;  // Throttle -> movimento verticale (invertito)
-            
-            // Aggiorna lo stato corrente
+            const crosshairY = -throttle * joystickRange;  // Throttle -> movimento verticale (invertito) ????????????????? CONTROLLA
+    
             currentState = { 
                 x: crosshairX, 
                 y: crosshairY, 
@@ -117,7 +106,6 @@
         // Controllo pulsanti
         let isStarted = false;
         const startStopBtn = document.getElementById('startStop');
-        // Pulsanti test che si alternano (solo uno attivo alla volta)
         const testButtons = [
             document.getElementById('testSingleJump'),
             document.getElementById('testMultiJump'),
@@ -132,8 +120,8 @@
             const containerWidth = containerRect.width;
             const containerHeight = containerRect.height;
 
-            // Conversion factor: pixels per meter (adjust based on your setup)
-            const pixelsPerMeter = 100; // Example: 100 pixels = 1 meter
+            // Conversion factor: pixels per meter (adjust based on your setup) --> ??? DA TESTARE
+            const pixelsPerMeter = 100; 
 
             // Arrow triangle dimensions (match your CSS exactly!)
             const arrowHeight = 35; // height from CSS (border-bottom: 35px solid)
@@ -291,7 +279,6 @@
             });
         });
         
-        // Funzione helper per mappare gli ID dei pulsanti agli eventi Socket.IO
         function getButtonEventName(buttonId) {
             const eventMap = {
                 'testSingleJump': 'button_test_single_jump',
