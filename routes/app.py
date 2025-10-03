@@ -8,6 +8,7 @@ eventlet.monkey_patch()
 
 from .handler_alpine import init_button_handler
 from .handler_inspector import init_button_handler as init_inspector_handler
+from .handler_dashboard import init_button_handler as init_dashboard_handler
 
 app = Flask(__name__)
 bp = Blueprint('main', __name__)
@@ -24,8 +25,10 @@ socketio = SocketIO(
     engineio_logger=False
 )
 
-init_button_handler(socketio)
-init_inspector_handler(socketio)  # Inizializza anche l'handler inspector
+# Initialize all handlers
+init_button_handler(socketio)  # Alpine control buttons
+init_inspector_handler(socketio)  # Inspector telemetry
+init_dashboard_handler(socketio)  # Dashboard telemetry
 
 
 @bp.route('/')
