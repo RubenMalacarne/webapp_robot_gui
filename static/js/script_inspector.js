@@ -1,4 +1,3 @@
-// Inizializza Socket.IO
 const socket = io();
 
 socket.on('winch_telemetry', function(data) {
@@ -23,21 +22,17 @@ socket.on('winch_telemetry', function(data) {
     }
 });
 
-// Registra questo client
 socket.emit('register', { node: 'inspector_gui' });
 
-// Variabili per tracking degli aggiornamenti
 let lastUpdate = Date.now();
 
 
 // Listener per dati telemetria winch
 socket.on('winch_telemetry', (data) => {
     console.log('Ricevuti dati telemetria winch:', data);
-    // Aggiorna Winch Right (DX)
     if (data.winch_right) {
         updateWinchTelemetry('right', data.winch_right);
     }
-    // Aggiorna Winch Left (SX) 
     if (data.winch_left) {
         updateWinchTelemetry('left', data.winch_left);
     }
@@ -76,8 +71,6 @@ function updateWinchTelemetry(side, telemetryData) {
         console.warn(`Sezione non trovata: ${sectionTitle}`);
         return;
     }
-    
-    // Mappa dei campi telemetria
     const fieldMappings = {
         'rope_force': 'Rope force',
         'rope_length': 'Rope length',
@@ -86,14 +79,11 @@ function updateWinchTelemetry(side, telemetryData) {
         'brake_status': 'Brake Status'
     };
     
-    // Aggiorna ogni campo telemetrico
     Object.entries(fieldMappings).forEach(([dataKey, labelText]) => {
         if (telemetryData[dataKey] !== undefined) {
             const valueElement = findValueElementInSection(section, labelText);
             if (valueElement) {
                 let displayValue = telemetryData[dataKey];
-                
-                // Formattazione speciale per alcuni campi
                 if (dataKey === 'current') {
                     displayValue = `${displayValue} A`;
                 } else if (dataKey === 'brake_status') {
@@ -112,8 +102,6 @@ function updateWinchTelemetry(side, telemetryData) {
 
 function updateAlpineBodyTelemetry(data) {
     console.log('Aggiornamento Alpine Body telemetry:', data);
-    
-    // Aggiorna Rope IMU
     if (data.rope_imu_orientation) {
         const element = document.getElementById('rope-imu-orientation');
         if (element) {
@@ -148,8 +136,6 @@ function updateAlpineBodyTelemetry(data) {
             element.textContent = `${data.rope_imu_acceleration.x.toFixed(3)}, ${data.rope_imu_acceleration.y.toFixed(3)}, ${data.rope_imu_acceleration.z.toFixed(3)}`;
         }
     }
-    
-    // Aggiorna Body IMU
     if (data.body_imu_orientation) {
         const element = document.getElementById('body-imu-orientation');
         if (element) {
@@ -220,7 +206,6 @@ function findValueElementInGroup(group, labelText) {
 }
 
 function updateConnectionStatus(connected) {
-    // Aggiorna tutti gli indicatori di connessione se presenti
     const indicators = document.querySelectorAll('.status-indicator');
     indicators.forEach(indicator => {
         if (!connected) {
@@ -230,7 +215,6 @@ function updateConnectionStatus(connected) {
     });
 }
 
-// Funzione per inviare richieste di dati
 function requestDataUpdate() {
     socket.emit('request_inspector_data', { 
         timestamp: Date.now(),
@@ -238,15 +222,12 @@ function requestDataUpdate() {
     });
 }
 
-
-// Inizializzazione
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔧 Inspector GUI inizializzato');
     console.log('Sezioni presenti:', document.querySelectorAll('.data-section').length);
     console.log('Gruppi dati presenti:', document.querySelectorAll('.data-group').length);
     console.log('Elementi dati presenti:', document.querySelectorAll('.data-item').length);
     
-    // Verifica struttura HTML
     const sections = document.querySelectorAll('.data-section');
     sections.forEach((section, index) => {
         const title = section.querySelector('.data-title')?.textContent;
@@ -258,21 +239,17 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`  📁 Gruppo ${groupIndex + 1}: ${groupTitle}`);
         });
     });
-    
-    // Richiedi dati iniziali
     setTimeout(() => {
         requestDataUpdate();
     }, 1000);
-    // Richiedi aggiornamenti periodici
+
     setInterval(requestDataUpdate, 3000);
 });
 
-// Gestione errori globali
 window.addEventListener('error', (event) => {
     console.error('Errore JavaScript Inspector:', event.error);
 });
 
-// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (socket) {
         socket.disconnect();
