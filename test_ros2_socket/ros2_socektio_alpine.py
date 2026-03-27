@@ -69,10 +69,10 @@ class AlpineDataSender(Node):
         # =========================== ROS2 definition ===========================
         
         self.robot_cmd = {"throttle": 0.0, "yaw": 0.0}
-        self.throttle_sub = self.create_subscription(
-            Float32, 'joystick/thrust', self.throttle_callback, 10)
-        self.yaw_sub = self.create_subscription(
-            Float32, 'joystick/yaw', self.yaw_callback, 10)
+        self.pitch_sub = self.create_subscription(
+            Float32, 'joystick/pitch', self.pitch_callback, 10)
+        self.roll_sub = self.create_subscription(
+            Float32, 'joystick/roll', self.roll_callback, 10)
         self.srv_trigger_jump = self.create_service(
             Trigger, 'joystick/SE', self.trigger_jump_service_callback
         )
@@ -90,12 +90,12 @@ class AlpineDataSender(Node):
 
         
     
-    def throttle_callback(self, msg):
+    def pitch_callback(self, msg):
         """Callback per ricevere dati throttle dal joystick ROS2"""
         self.robot_cmd["throttle"] = msg.data
         # Non inviamo subito, lasciamo che il timer gestisca l'invio
         
-    def yaw_callback(self, msg):
+    def roll_callback(self, msg):
         """Callback per ricevere dati yaw dal joystick ROS2"""
         self.robot_cmd["yaw"] = msg.data
         # Non inviamo subito, lasciamo che il timer gestisca l'invio
